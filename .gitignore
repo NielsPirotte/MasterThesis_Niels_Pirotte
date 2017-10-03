@@ -1,0 +1,8 @@
+#all files to be ignored by git
+*.bak
+*.mti
+*.mpf
+*.wlf
+transcript
+work/
+Testproj/
