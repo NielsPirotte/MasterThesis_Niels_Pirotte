@@ -10,22 +10,25 @@ library work;
 use work.constants.all;
 
 entity MMALU is
-   generic(d: integer := d; -- Word size
-           q: integer := w -- Datapath size
-   );
    port(   rst, clk: in  std_logic;
            load:     in  std_logic;
-           x:        in  std_logic_vector((q*d)-1 downto 0);
-           y:        in  std_logic_vector((q*d)-1 downto 0);
-           t:        out std_logic_vector((q*d)-1 downto 0);
+           x:        in  std_logic_vector(w-1 downto 0);
+           y:        in  std_logic_vector(w-1 downto 0);
+           t:        out std_logic_vector(w-1 downto 0);
            en:       in  std_logic; 				-- Enables shifting in x register
            cmd:      in std_logic); 				-- Enables adding 
 end MMALU;
 
 architecture arch_MMALU of MMALU is
-   signal regX: 	std_logic_vector((q*d)-1 downto 0);
-   signal regY: 	std_logic_vector((q*d)-1 downto 0);
-   signal regT: 	std_logic_vector((q*d)-1 downto 0);
+   subtype t:          std_logic_vector(e-1 downto 0);
+
+  --Registers
+   signal regX: 	std_logic_vector(w-1 downto 0);
+   signal regY: 	std_logic_vector(w-1 downto 0);
+   signal regT: 	std_logic_vector(w-1 downto 0);
+   signal shift_timer:  t;
+   signal shift_timer_next:  t;
+   signal shift_en:     std_logic;
    --signal zero_d: 	std_logic_vector(d-1 downto 0);
    signal u: 		std_logic;
    signal xY:	        std_logic_vector(d-1 downto 0);
@@ -38,9 +41,8 @@ architecture arch_MMALU of MMALU is
    signal Cin1          std_logic;
    signal Cin2          std_logic;
    --not yet sure
-   signal Tnext: std_logic_vector(q-1+d downto 0);
-   signal M: 	std_logic_vector(q-1+d downto 0);
-
+   signal Tnext: std_logic_vector(w downto 0);
+   signal M: 	std_logic_vector(w downto 0);
    component cell
       generic(d: integer);
       
@@ -72,6 +74,28 @@ begin
    M <= '0' & primeM;
    
    --Define registers
+   shift_timer: process(rst, clk)
+   begin
+      if clk'event and clk = '1' then
+      	if rst = '0' then
+      	   shift_en = '0';
+      	   shift_timer <= (others => '0');
+      	elsif en = '1' then
+      	   if(shift_timer =  t'(others => '1') then
+      	   	shift_timer <= (others => '0');
+      	   	shift_en <= '1';
+      	   else 
+      	   --Deze adder gaat plaats in beslag nemen op een ASIC
+      	   -- => overhead met vorige design
+      	   	shift_timer <= shift_timer_next;
+      	   	shift_en <= '0';
+      	else 
+      	   shift_timer <= shift_timer;
+      	   shift_en <= shift_en;
+        end if;
+     end if;      
+   end
+   
    reg_x: process(rst, clk)
    begin
       if clk'event and clk = '1' then
@@ -80,7 +104,7 @@ begin
          elsif load = '1'then
             regX <= x;
          elsif en = '1' then
-            regX <= '0' & regX((q*d)-1 downto 1); --shift with 1 bit to left [<< 1]
+            regX <= regX(w-1 downto 1) srl 1; --shift with 1 bit to right [>> 1]
          else
             regX <= regX;
          end if;
@@ -96,7 +120,7 @@ begin
             regY <= y;
          elsif en = '1' then
             --circular shift register shift per word
-            regY <= regY(d-1 downto 0) & regY((q*d)-1 downto d);
+            regY <= regY(d-1 downto 0) & regY((w-1 downto d);
          else
             regY <= regY;
          end if;
@@ -111,7 +135,7 @@ begin
          elsif load = '1' then 
             regT <= (others => '0');
          elsif en = '1' then
-            regT <= '0' & Tnext(qed downto d); -- with div d 
+            regT <= Tnext srl d; -- with div d 
          else
             regT <= regT;
          end if;
@@ -141,7 +165,11 @@ begin
 
    RCadder_1: RCadder
       generic map(d)
-      port map(adder_1_out, B, Cin2, adder_2_C, Tnext);   
+      port map(adder_1_out, B, Cin2, adder_2_C, Tnext);
+      
+      RCadder_timer: RCadder
+      generic map(e)
+      port map(shift_timer, '1', '0', open, shift_timer_next); 
       
    --Nog na te kijken   
       

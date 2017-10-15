@@ -5,10 +5,8 @@ library work;
 use work.constants.all;
 
 entity adder is
-   generic(d: integer;
-           q: integer);
-   port(   a, b, c_in: in std_logic;
-           s, c_out: out std_logic
+   port(   a, b, c_in: in  std_logic;
+           s, c_out:   out std_logic
            );
 end adder;
 

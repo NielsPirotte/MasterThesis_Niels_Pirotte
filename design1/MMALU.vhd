@@ -10,58 +10,56 @@ library work;
 use work.constants.all;
 
 entity MMALU is
-   generic(d: integer := 1; -- Word size
-           q: integer := 4 -- Datapath size
-		   );
-   port(   rst, clk: in std_logic;
-           load: in std_logic;
-           x: in std_logic_vector(q-1+d downto 0);
-           y: in std_logic_vector(q-1+d downto 0);
-           t: out std_logic_vector(q-1+d downto 0);
-	debugx: out std_logic_vector(q-1+d downto 0);
-	debugy: out std_logic_vector(q-1+d downto 0);
-           en: in std_logic; -- Enables shifting in x register
-           cmd: in std_logic); -- Enables adding 
+   generic(q: integer := 4 -- Datapath size = bits needed to represent all numbers (max 2M)
+   	  );
+   port(   rst, clk: 	in  std_logic;
+           load: 	in  std_logic;
+           x: 		in  std_logic_vector(q downto 0);
+           y: 		in  std_logic_vector(q downto 0);
+           t: 		out std_logic_vector(q downto 0);
+	   end_pulse:   out std_logic;
+           en: 		in  std_logic; -- Enables shifting in x register
+           cmd: 	in std_logic   -- Enables adding
+       ); 
 end MMALU;
 
 architecture arch_MMALU of MMALU is
-   signal regX: std_logic_vector(q-1+d downto 0);
-   signal regY: std_logic_vector(q-1+d downto 0);
-   signal regT: std_logic_vector(q-1+d downto 0);
-   signal zero_d: std_logic_vector(d-1 downto 0);
-   signal u: 	std_logic;
-   signal xY:	std_logic_vector(q-1+d downto 0);
-   signal uM:   std_logic_vector(q-1+d downto 0);
-   signal Tnext: std_logic_vector(q-1+d downto 0);
-   signal M: 	std_logic_vector(q-1+d downto 0);
-   signal A, B, adder_output_0: std_logic_vector(q-1+d downto 0);
+   subtype timer        std_logic_vector(e-1 downto 0);
+   
+   signal t, t_next:	timer;
+
+   signal regX: 	std_logic_vector(q downto 0);
+   signal regY: 	std_logic_vector(q downto 0);
+   signal regT: 	std_logic_vector(q downto 0);
+   signal u: 		std_logic;
+   signal xY:		std_logic_vector(q downto 0);
+   signal uM:   	std_logic_vector(q downto 0);
+   signal Tnext: 	std_logic_vector(q downto 0);
+   signal M: 		std_logic_vector(q downto 0);
+   signal A, B, adder_output_0: std_logic_vector(q downto 0);
 
    component cell
-      generic(d: integer;
-              q: integer);
-      port(   b: in std_logic_vector(q-1+d downto 0);
-			  a_i: in std_logic;
-              output: out std_logic_vector(q-1+d downto 0)
+      generic(d: integer);
+      
+      port(   b:      in  std_logic_vector(q downto 0);
+	      a_i:    in  std_logic;
+              output: out std_logic_vector(q downto 0)
            );
    end component;
    
    component RCadder
-      generic(d: integer;
-              q: integer);
-	  port(   a: in std_logic_vector(q-1+d downto 0);
-              b: in std_logic_vector(q-1+d downto 0);
-              output: out std_logic_vector(q-1+d downto 0)
+      generic(q: integer);
+      
+      port(   a:      in  std_logic_vector(q downto 0);
+              b:      in  std_logic_vector(q downto 0);
+              output: out std_logic_vector(q downto 0)
            );
    end component;
 begin
    --Output
-	t<=regT;
-	debugx<=regX;
-	debugy<=regY;
-   --Zero word
-   zero_d <= (others => '0');
+   t<=regT;
    --M
-   M <= zero_d & primeM;
+   M <= '0' & primeM;
    
    --Define registers
    reg_x: process(rst, clk)
@@ -72,7 +70,7 @@ begin
          elsif load = '1'then
             regX <= x;
          elsif en = '1' then
-            regX <= zero_d & regX(q-1+d downto d); --shift with wordsize to left [<< d]
+            regX <= '0' & regX(q downto 1); --shift with wordsize to left [<< d]
          else
             regX <= regX;
          end if;
@@ -100,7 +98,7 @@ begin
          elsif load = '1' then 
             regT <= (others => '0');
          elsif en = '1' then
-            regT <= zero_d & Tnext(q-1+d downto d); -- with div d
+            regT <= '0' & Tnext(q downto 1); -- with div d
          else
             regT <= regT;
          end if;
@@ -114,24 +112,52 @@ begin
    u <= regT(0) xor (regX(0) and regY(0));
    
    inst_cell_1: cell
-      generic map(d, q)
+      generic map(q)
       port map(M, u, uM);
 
    inst_cell_0: cell
-      generic map(d, q)
+      generic map(q)
       port map(regY, regX(0), xY);
       
    RCadder_0: RCadder
-	  generic map(d, q)
+      generic map(q)
       port map(regT, A, adder_output_0);
 
    RCadder_1: RCadder
-	  generic map(d, q)
-      port map(adder_output_0, B, Tnext);   
+      generic map(q)
+      port map(adder_output_0, B, Tnext);
+      
+   RCadder_timer: RCadder
+      generic map(e)
+      port map(t, '1', '0', open, t_next);  
       
    --For implementing add function
    -- when cmd = '1' then we use the adding function of the MALU
    A <= regY when (cmd = '1') else xY;
    B <= (others => '0') when (cmd = '1') else uM;
+   
+   --Timer for knowing when Montgomery ended
+      --Define registers
+   shift_timer: process(rst, clk)
+   begin
+      if clk'event and clk = '1' then
+      	if rst = '0' then
+      	   end_pulse 	<= '0';
+      	   t 		<= (others => '0');
+      	elsif en = '1' then
+      	   if(t = q  then --q moeten we wrs nog binair kunnen voorstellen
+      	   	t 	  <= (others => '0');
+      	   	end_pulse <= '1';
+      	   else 
+      	   --Deze adder gaat plaats in beslag nemen op een ASIC
+      	   -- => overhead met vorige design
+      	   	t 	 <= t_next;
+      	   	shift_en <= '0';
+      	else 
+      	   t 		<= t;
+      	   end_pulse    <= end_pulse;
+        end if;
+     end if;      
+   end
    
 end arch_MMALU;

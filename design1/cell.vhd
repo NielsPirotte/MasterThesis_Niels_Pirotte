@@ -7,25 +7,19 @@ library work;
 use work.constants.all;
 
 entity cell is
-   generic(d: integer;
-           q: integer);
-   port(   b: in std_logic_vector(q-1+d downto 0);
-           a_i: in std_logic;
-           output: out std_logic_vector(q-1+d downto 0)
-           );
+   generic(q: integer);
+   port(   b:      in  std_logic_vector(q downto 0);
+           a_i:    in  std_logic;
+           output: out std_logic_vector(q downto 0)
+   );
 end cell;
 
 architecture arch_cell of cell is
    
-begin
-   
-   gen_d1: if d=1 generate
-   
-      gen_ab: for i in q+d-1 downto 0 generate
-         output(i) <= a_i and b(i);
-      end generate;
-   
-   end generate;      
+begin   
+   gen_ab: for i in q downto 0 generate
+      output(i) <= a_i and b(i);
+   end generate;    
    
 --   gen_dnot1: if d>1 generate
 --
