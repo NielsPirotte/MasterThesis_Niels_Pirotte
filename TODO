@@ -1,0 +1,6 @@
+#1
+Voor de output van de MM is het voldoende het aantal least significatn bits te nemen als het aantal bits van modulo/priem getal M
+
+bv M is een 3 bit priemgetal 
+=> Het output register van de MM wordt een 5 bits register
+=> de 3 least significant bits van dit register moeten we outputten

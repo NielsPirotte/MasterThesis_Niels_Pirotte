@@ -3,6 +3,7 @@
 *.mti
 *.mpf
 *.wlf
+*.txt
 transcript
 work/
 Testproj/
