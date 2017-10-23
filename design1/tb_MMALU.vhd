@@ -1,12 +1,15 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
+library work;
+use work.constants.all;
+
 entity tb_MMALU is
-    generic(q: integer := 4); -- Datapath size
 end tb_MMALU;
 
 architecture tb of tb_MMALU is
     component MMALU
+	generic(q: integer := 4);
         port (rst  :     in  std_logic;
               clk  :     in  std_logic;
               load :     in  std_logic;
@@ -21,9 +24,9 @@ architecture tb of tb_MMALU is
     signal rst      : std_logic;
     signal clk      : std_logic := '0';
     signal load     : std_logic;
-    signal x        : std_logic_vector (q downto 0);
-    signal y        : std_logic_vector (q downto 0);
-    signal t        : std_logic_vector (q downto 0);
+    signal x        : std_logic_vector (d downto 0);
+    signal y        : std_logic_vector (d downto 0);
+    signal t        : std_logic_vector (d downto 0);
     signal end_pulse: std_logic;
     signal en       : std_logic;
     signal cmd      : std_logic;
@@ -34,6 +37,7 @@ architecture tb of tb_MMALU is
 begin
 
     dut : MMALU
+    generic map(d)
     port map (rst  => rst,
               clk  => clk,
               load => load,
@@ -53,10 +57,9 @@ begin
         rst <= '0';
         load <= '0';
         
-        --x<= "01100"; --12
-        --y <= "00100"; --4
-	x<= "00011"; --3
-        Y <= "00111"; --7
+        -- 3 en 7 voor aantonen 21 mod 7 -> 0
+	x<= "00101"; --5
+        Y <= "00110"; --6 (5*6 mod 7 = 30 mod 7 = 2 mod 7 --> "00010")
         
         en <= '0';
         cmd <= '0';

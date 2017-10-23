@@ -23,7 +23,7 @@ constant primeM: std_logic_vector(3 downto 0) := "0111"; -- 7
 constant d: integer := 4; --Zou dit werken?? wrs een te grote implementatie 32bit per int
 
 --number of words (designed to be a multiple of 2)
-constant e: integer := ceil(log2(real(d+1)));
+constant e: integer := integer(ceil(log2(Real(d+1))));
 
 --EC (Elliptic Curve)
 
