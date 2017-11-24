@@ -1,6 +1,7 @@
 --Implementation of a Montgommery Modular ALU (MMALU)
 --cmd signal for selecting adding
 --if cmd = 1 => add
+--first set cmd than set the enable
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -17,7 +18,7 @@ entity MMALU is
            x: 		in  std_logic_vector(q downto 0);
            y: 		in  std_logic_vector(q downto 0);
            t: 		out std_logic_vector(q downto 0);
-	   end_pulse:   out std_logic;
+	   done:        out std_logic;
            en: 		in  std_logic;  -- Enables shifting in x register
            cmd: 	in  std_logic   -- Enables adding
        ); 
@@ -30,14 +31,15 @@ architecture arch_MMALU of MMALU is
 
    signal regX: 	std_logic_vector(q downto 0);
    signal regY: 	std_logic_vector(q downto 0);
-   signal regT: 	std_logic_vector(q downto 0);
+   signal regT_ext:     std_logic_vector(q downto 0);
+   signal regT: 	std_logic_vector(q-1 downto 0);
    signal u: 		std_logic;
    signal xY:		std_logic_vector(q downto 0);
    signal uM:   	std_logic_vector(q downto 0);
    signal Tnext: 	std_logic_vector(q downto 0);
    signal M: 		std_logic_vector(q downto 0);
    signal A, B, adder_output_0: std_logic_vector(q downto 0);
-   signal end_pulse_h:  std_logic;
+   signal done_h:       std_logic;
 
    component cell
       generic(q: integer);
@@ -58,11 +60,13 @@ architecture arch_MMALU of MMALU is
    end component;
 begin
    --Output
-   t<=regT;
-   end_pulse<=end_pulse_h;
+   t<=regT_ext;
+   done<=done_h;
    --M
    M <= '0' & primeM;
-   
+   --regT extended
+   regT_ext <= '0' & regT;
+
    --Define registers
    reg_x: process(rst, clk)
    begin
@@ -97,10 +101,10 @@ begin
       if clk'event and clk = '1' then
          if rst = '0' then
             regT <= (others => '0');
-         elsif load = '1' then 
+         elsif load = '1' then
             regT <= (others => '0');
          elsif en = '1' then
-            regT <= '0' & Tnext(q downto 1); -- with div d
+            regT <= Tnext(q downto 1); -- with div d
          else
             regT <= regT;
          end if;
@@ -123,7 +127,7 @@ begin
       
    RCadder_0: RCadder
       generic map(q)
-      port map(regT, A, adder_output_0);
+      port map(regT_ext, A, adder_output_0);
 
    RCadder_1: RCadder
       generic map(q)
@@ -136,30 +140,30 @@ begin
    --For implementing add function
    -- when cmd = '1' then we use the adding function of the MALU
    -- Introduces a warning:
-   A <= regY when (cmd = '1') else xY;
-   B <= (others => '0') when (cmd = '1') else uM;
+   A <= regY(q-1 downto 0) & '0' when (cmd = '1') else xY;
+   B <= regX(q-1 downto 0) & '0' when (cmd = '1') else uM;
    
    --Timer for knowing when Montgomery ended
    --Define registers
+   --Deze blok moet nog worden nagekeken
    shift_timer: process(rst, clk)
    begin
+      done_h <= '0';
       if clk'event and clk = '1' then
       	if rst = '0' then
-      	   end_pulse_h 	<= '0';
-      	   ti 		<= (others => '0');
+      	   ti 	<= (others => '0');
       	elsif en = '1' then
-      	   if ti = q  then --q moeten we wrs nog binair kunnen voorstellen
+	   if cmd = '1' then
+		if ti = 1 then
+		    done_h <= '1';
+		end if;	
+      	   elsif ti = q then --q moeten we wrs nog binair kunnen voorstellen
       	   	ti 	  <= (others => '0');
-      	   	end_pulse_h <= '1';
+      	   	done_h <= '1';
       	   else 
-      	   --Deze adder gaat plaats in beslag nemen op een ASIC
-      	   -- => overhead met vorige design
       	   	ti 	 <= ti_next;
-      	   	end_pulse_h <= '0';
+      	   	done_h   <= '0';
 	   end if;
-      	else 
-      	   ti 		<= ti;
-      	   end_pulse_h  <= end_pulse_h;
         end if;
      end if;      
    end process;
