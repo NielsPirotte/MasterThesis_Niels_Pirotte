@@ -4,6 +4,7 @@
 *.mpf
 *.wlf
 *.txt
+*.swp
 transcript
 work/
 Testproj/

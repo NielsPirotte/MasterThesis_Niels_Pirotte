@@ -1,8 +1,8 @@
-#1
+#1 -- jo vliegen
 
 Implement Statemachine
 
-#2
+#2 -- done, not possible
 
 Bekijk doorschuifmechanisme voor Multiplexers
 
@@ -10,10 +10,10 @@ Bekijk doorschuifmechanisme voor Multiplexers
 
 Implement scalable architecture --> Koc
 
-#4
+#4 -- done
 
 Implement non-modular subtraction and addition
 
-#5
+#5 -- done
 
-Implement point multiplication module
+Implement point multiplication module 

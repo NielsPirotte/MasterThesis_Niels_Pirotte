@@ -1,5 +1,12 @@
---for multiplication of 1 bit of x_i with y and
---for multiplication of 
+----------------------------------------------------------------------
+-- Author: Niels Pirotte
+--
+-- Project Name: Masterthesis Niels Pirotte
+-- Module Name: cell
+-- Description: bit*word operation
+-- Description: For multiplication of 1 bit of x_i with word y and
+----------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 
@@ -8,16 +15,16 @@ use work.constants.all;
 
 entity cell is
    generic(q: integer);
-   port(   b:      in  std_logic_vector(q downto 0);
+   port(   b:      in  std_logic_vector(q-1 downto 0);
            a_i:    in  std_logic;
-           output: out std_logic_vector(q downto 0)
+           output: out std_logic_vector(q-1 downto 0)
    );
 end cell;
 
 architecture arch_cell of cell is
    
 begin   
-   gen_ab: for i in q downto 0 generate
+   gen_ab: for i in q-1 downto 0 generate
       output(i) <= a_i and b(i);
    end generate;    
    
