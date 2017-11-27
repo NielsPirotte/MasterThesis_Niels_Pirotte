@@ -1,6 +1,11 @@
---Implementation of a Montgommery Modular ALU (MMALU)
---cmd signal for selecting adding
---if cmd = 1 => add
+----------------------------------------------------------------------
+-- Author: Niels Pirotte
+--
+-- Project Name: Masterthesis Niels Pirotte
+-- Module Name: MMALU
+-- Description: Modular Montgomery Multiplier using the method of Koç
+-- in the paper: "A scalable Architecture for Montgomery Multiplier"
+----------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -8,93 +13,97 @@ use ieee.std_logic_unsigned.all;
 
 library work;
 use work.constants.all;
+   generic(log2primeM: integer := 4; 
+	   e:          integer := 3
+          );
 
 entity MMALU is
-   port(   rst, clk: in  std_logic;
-           load:     in  std_logic;
-           x:        in  std_logic_vector(w-1 downto 0);
-           y:        in  std_logic_vector(w-1 downto 0);
-           t:        out std_logic_vector(w-1 downto 0);
-           en:       in  std_logic; 				-- Enables shifting in x register
-           cmd:      in std_logic); 				-- Enables adding 
+   port(   rst, clk: in   std_logic;
+           load:     in   std_logic;
+           x:        in   std_logic_vector(log2primeM+1 downto 0);
+           y:        in   std_logic_vector(log2primeM+1 downto 0);
+           en:       in   std_logic;
+           t:        out  std_logic_vector(log2primeM+1 downto 0);
+           done:     out  std_logic); 
 end MMALU;
 
 architecture arch_MMALU of MMALU is
-   subtype t:          std_logic_vector(e-1 downto 0);
+   subtype counter:     std_logic_vector(e downto 0);
 
   --Registers
-   signal regX: 	std_logic_vector(w-1 downto 0);
-   signal regY: 	std_logic_vector(w-1 downto 0);
-   signal regT: 	std_logic_vector(w-1 downto 0);
-   signal shift_timer:  t;
-   signal shift_timer_next:  t;
-   signal shift_en:     std_logic;
-   --signal zero_d: 	std_logic_vector(d-1 downto 0);
+   signal regX: 	std_logic_vector(log2primeM+1 downto 0);
+   signal regY: 	std_logic_vector(log2primeM+1 downto 0);
+   signal regT: 	std_logic_vector(log2primeM downto 0);
+   signal X_i, Y_j:     std_logic;
+   signal s_prev:	std_logic;
+   signal cntr_0:       counter;
+   signal cntr_0_next:  counter;
+   signal cntr_1:       counter;
+   signal cntr_1_next:  counter;
+   signal shift_i:	std_logic;
+   signal shift_j:      std_logic;
    signal u: 		std_logic;
-   signal xY:	        std_logic_vector(d-1 downto 0);
-   signal uM:   	std_logic_vector(d-1 downto 0);
    
-   signal adder_1_out   std_logic_vector(d-1 downto 0);
-   signal adder_1_C     std_logic;
-   signal adder_2_C     std_logic; 
-   
-   signal Cin1          std_logic;
-   signal Cin2          std_logic;
-   --not yet sure
-   signal Tnext: std_logic_vector(w downto 0);
-   signal M: 	std_logic_vector(w downto 0);
    component cell
-      generic(d: integer);
-      
-      port(   b:      in  std_logic_vector(d-1 downto 0);
-	      a_i:    in  std_logic;
-              output: out std_logic_vector(d-1 downto 0)
-      );
+      port(   s_prev:     in  std_logic;
+              Xi_Yj:      in  std_logic;
+              u_Mj:       in  std_logic;
+              write_out2: in  std_logic:
+              clk, rst:   in  std_logic;
+              out1:       out std_logic;
+              out2:       out std_logic
+          );
    end component;
-   
-   component RCadder
-      generic(d: integer);
-      
-      port(   a:      in  std_logic_vector(d-1 downto 0);
-              b:      in  std_logic_vector(d-1 downto 0);
-              c_in:   in  std_logic;
-              c_out   out std_logic;
-              output: out std_logic_vector(d-1 downto 0)
-      );
-    end component;
-    
-begin
-   --Output
-	t<=regT;
 
-   --Zero word --> necessary?
-   --zero_d <= (others => '0');
+   component RCadder
+      generic(q: integer);
+      port(   input:  in  std_logic_vector(q-1 downto 0);  
+	      output: out std_logic_vector(q-1 downto 0)
+          );
+   end component;
+
+begin
+   -- Counter
+   counter_adder_0: counter
+      generic map(e+1);
+      port map( input => cntr_0;
+		output => cntr_0_next
+              );
+  
+    counter_adder_1: counter
+      generic map(e+1);
+      port map( input => cntr_1;
+		output => cntr_1_next
+              );
    
-   --M
-   M <= '0' & primeM;
-   
-   --Define registers
-   shift_timer: process(rst, clk)
+   reg_cntr: process(rst, clk)
    begin
+      done <= '0'; shift_j <= '0';
       if clk'event and clk = '1' then
       	if rst = '0' then
-      	   shift_en = '0';
-      	   shift_timer <= (others => '0');
+      	   cntr_0 <= (others => '0');
+	   cntr_1 <= (others => '0');
       	elsif en = '1' then
-      	   if(shift_timer =  t'(others => '1') then
-      	   	shift_timer <= (others => '0');
-      	   	shift_en <= '1';
-      	   else 
-      	   --Deze adder gaat plaats in beslag nemen op een ASIC
-      	   -- => overhead met vorige design
-      	   	shift_timer <= shift_timer_next;
-      	   	shift_en <= '0';
-      	else 
-      	   shift_timer <= shift_timer;
-      	   shift_en <= shift_en;
-        end if;
-     end if;      
+	    if cntr_0 = e+1 then
+		cntr_0 <= (others => '0');
+		if cntr_1 = e+1 then
+		   done <= '1';
+ 		   cntr_1 <= (others => '0');
+	        else
+		   cntr_1 <= cntr_1_next;
+		   shift_j <= '1';
+		end if;
+	     else
+		cntr_0 <= cntr_0_next;
+	     end if;
+	end if;
+      end if;	    	
    end
+	
+   -- Because every clockcycle one bit is processed
+   shift_i <= en;
+
+   -- Registers
    
    reg_x: process(rst, clk)
    begin
@@ -104,12 +113,14 @@ begin
          elsif load = '1'then
             regX <= x;
          elsif en = '1' then
-            regX <= regX(w-1 downto 1) srl 1; --shift with 1 bit to right [>> 1]
+            regX <= '0' & regX(log2primeM+1 downto 1);
          else
             regX <= regX;
          end if;
       end if;
    end process;
+
+   X_i <= regX(0);
    
    reg_y: process(rst, clk)
    begin
@@ -120,13 +131,15 @@ begin
             regY <= y;
          elsif en = '1' then
             --circular shift register shift per word
-            regY <= regY(d-1 downto 0) & regY((w-1 downto d);
+            regY <= regY(0) & regY(log2primeM+1 downto 1);
          else
             regY <= regY;
          end if;
       end if;
    end process;
    
+   Y_j <= regY(0);
+
    reg_t: process(rst, clk)
    begin
       if clk'event and clk = '1' then
@@ -148,34 +161,15 @@ begin
    
    u <= regT(0) xor (regX(0) and regY(0));
    
-   inst_cell_1: cell
-      generic map(d)
-      port map(M(d-1 downto 0), u, uM);
-
    inst_cell_0: cell
-      generic map(d)
-      port map(regY(d-1 downto 0), regX(0), xY);
-   
-   Cin1 <= adder_1_C and adder_2_C;
-   Cin2 <= adder_2_C;
-      
-   RCadder_0: RCadder
-      generic map(d)
-      port map(regT(), xY, Cin1, adder_1_C, adder_1_out);
-
-   RCadder_1: RCadder
-      generic map(d)
-      port map(adder_1_out, B, Cin2, adder_2_C, Tnext);
-      
-      RCadder_timer: RCadder
-      generic map(e)
-      port map(shift_timer, '1', '0', open, shift_timer_next); 
-      
-   --Nog na te kijken   
-      
-   --For implementing add function
-   -- when cmd = '1' then we use the adding function of the MALU
-   --A <= regY when (cmd = '1') else xY;
-   --B <= (others => '0') when (cmd = '1') else uM;
-   
+      generic map(log2primeM+2)
+      port map(	s_prev => s_prev,
+                Xi_Yj =>    
+                u_Mj =>
+                write_out2 => 
+                clk => clk,
+		rst => rst,
+                out1 =>  
+                out2 =>
+	       );
 end arch_MMALU;

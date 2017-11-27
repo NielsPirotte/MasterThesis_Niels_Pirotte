@@ -10,10 +10,14 @@ Bekijk doorschuifmechanisme voor Multiplexers
 
 Implement scalable architecture --> Koc
 
-#4 -- done
+#4 -- to be tested
 
 Implement non-modular subtraction and addition
 
 #5 -- done
 
-Implement point multiplication module 
+Implement point multiplication module
+
+#6 -- First draft implemented (counter.vhd in MM_design1/)
+
+Counter adders can be more efficient
