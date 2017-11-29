@@ -7,6 +7,7 @@
 -- Remark 1: When subtracting automatically 2M is added
 -- Remark 2: cmd signal for enabling adding/subtracting
 -- Remark 3: Set sub to enable subtracting
+-- Remark 4: When loading also always do a rst
 
 -- General remark:
 -- A bound is set to the montgomery multiplier: 16M < R.
@@ -23,10 +24,6 @@ library work;
 use work.constants.all;
 
 entity MMALU is
-   -- Number of bits of the prime
-   generic(log2primeM: integer := 4;
-	   e:          integer := 3
-   	  );
    -- The datapath is 2 bits larger than log2primeM
    -- The inputs and outputs are only 1 bit larger than log2primeM
    port(   rst, clk: 	in  std_logic;
@@ -48,16 +45,19 @@ architecture arch_MMALU of MMALU is
 
    signal xory:		std_logic_vector(log2primeM+1 downto 0);
    signal regX: 	std_logic_vector(log2primeM+1 downto 0);
+   signal regX_ext:     std_logic_vector(log2primeM+2 downto 0);
    signal regY: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regT_ext:     std_logic_vector(log2primeM+1 downto 0);
-   signal regT: 	std_logic_vector(log2primeM downto 0);
+   signal regY_ext:     std_logic_vector(log2primeM+2 downto 0);
+   signal regT: 	std_logic_vector(log2primeM+1 downto 0);
+   signal regT_ext:     std_logic_vector(log2primeM+2 downto 0);
    signal u:     	std_logic;
-   signal 2comp: 	std_logic;
-   signal xY:		std_logic_vector(log2primeM+1 downto 0);
-   signal uM:   	std_logic_vector(log2primeM+1 downto 0);
-   signal Tnext: 	std_logic_vector(log2primeM+1 downto 0);
-   signal M, 2M:	std_logic_vector(log2primeM+1 downto 0);
-   signal A, B, adder_out: std_logic_vector(log2primeM+1 downto 0);
+   signal TwoComp: 	std_logic;
+   signal xY:		std_logic_vector(log2primeM+2 downto 0);
+   signal uM:   	std_logic_vector(log2primeM+2 downto 0);
+   signal Tnext: 	std_logic_vector(log2primeM+2 downto 0);
+   signal M:            std_logic_vector(log2primeM+2 downto 0);
+   signal TwoM:	        std_logic_vector(log2primeM+1 downto 0);
+   signal A, B, adder_out: std_logic_vector(log2primeM+2 downto 0);
    signal done_h:       std_logic;
 
    component xor_cell
@@ -89,15 +89,18 @@ architecture arch_MMALU of MMALU is
    end component;
 begin
    --Output
-   t    <= regT_ext;
+   t    <= regT;
+
    done <= done_h;
    -- Modular settings
-   M  <= "00" & primeM;
-   2M <= '0' & primeM & '0';
-   --regT extended
+   M  <= "000" & primeM;
+   TwoM <= '0' & primeM & '0';
+   
    regT_ext <= '0' & regT;
+   regX_ext <= '0' & regX;
+   regY_ext <= '0' & regY;
 
-   2comp <= cmd and sub;
+   TwoComp <= cmd and sub;
 
    --Define registers
    reg_x: process(rst, clk)
@@ -134,13 +137,17 @@ begin
          if rst = '0' then
             regT <= (others => '0');
          elsif load = '1' then
-            if 2comp = '0' then
+            if TwoComp = '0' then
 		regT <= (others => '0');
 	    else
-		regT <= 2M;
+		regT <= TwoM;
 	    end if;
-         elsif en = '1' and 2comp = '0' then
-            regT <= Tnext(log2primeM+1 downto 1); -- with div d
+         elsif en = '1' then
+	    if cmd ='0' then
+            	regT <= Tnext(log2primeM+2 downto 1); -- with div d
+	    else
+		regT <= Tnext(log2primeM+1 downto 0);
+	    end if;
          else
             regT <= regT;
          end if;
@@ -155,23 +162,23 @@ begin
    
    inst_cell_2: xor_cell
       generic map(log2primeM+2)
-      port map(y, 2comp, xory);
+      port map(y, TwoComp, xory);
 
    inst_cell_1: cell
-      generic map(log2primeM+2)
+      generic map(log2primeM+3)
       port map(M, u, uM);
 
    inst_cell_0: cell
-      generic map(log2PrimeM+2)
-      port map(regY, regX(0), xY);
+      generic map(log2PrimeM+3)
+      port map(regY_ext, regX(0), xY);
       
    RCadder_0: RCadder
-      generic map(log2PrimeM+2)
+      generic map(log2PrimeM+3)
       port map(regT_ext, A, '0', adder_out);
 
    RCadder_1: RCadder
-      generic map(log2primeM+2)
-      port map(adder_out, B, 2comp, Tnext);
+      generic map(log2primeM+3)
+      port map(adder_out, B, TwoComp, Tnext);
       
    RCadder_counter: RCadder
       generic map(e)
@@ -181,8 +188,8 @@ begin
    -- when cmd = '1' then we use the adding function of the MALU
    -- Introduces a warning:
 	
-   A <= regY  when (cmd = '1') else xY;
-   B <= regX  when (cmd = '1') else uM;
+   A <= regY_ext  when (cmd = '1') else xY;   -- Or set x on 1 when cmd = 1
+   B <= regX_ext  when (cmd = '1') else uM;
    
    --Timer for knowing when Montgomery ended
    --Define registers
@@ -192,14 +199,18 @@ begin
       done_h <= '0';
       if clk'event and clk = '1' then
       	if rst = '0' then
+	--if rst = '0' or load = '1' then
       	   cntr	<= (others => '0');
       	elsif en = '1' then
-	   if cmd = '1' then
+	   if cmd = '1' then 
 		if cntr = 1 then
 		    done_h <= '1';
+		    -- cntr <= (others => '0');
+		else 
+		    cntr <=  cntr_next;
 		end if;	
       	   --log2primeM moeten we wrs nog binair kunnen voorstellen?
-      	   elsif cntr = log2primeM+1 then
+      	   elsif cntr = log2primeM+3 then
       	   	cntr 	  <= (others => '0');
       	   	done_h <= '1';
       	   else 

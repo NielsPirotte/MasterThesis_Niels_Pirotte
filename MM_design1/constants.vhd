@@ -22,18 +22,13 @@ package constants is
 -- Parameters
 --
 -- Number of bits of the prime
-constant log2primeM: integer := 4;
+constant log2primeM: integer := 3;
+-- Therefore the inputs of the MMALU are < 2N
+-- Number of bits of scanning counter for the 2N inputs
+constant e: integer := integer(ceil(log2(Real(log2primeM+4))));
 --
 --constant primeM: std_logic_vector(log2primeM-1 downto 0) := "1101"; -- 13
-constant primeM: std_logic_vector(log2primeM-1 downto 0) := "0111"; -- 7
-
---Onderstaande is nog niet nagekeken
-
---number of bits of the datapath d(digits)
-constant d: integer := 4; --Zou dit werken?? wrs een te grote implementatie 32bit per int
-
---number of words (designed to be a multiple of 2)
-constant e: integer := integer(ceil(log2(Real(d+1))));
+constant primeM: std_logic_vector(log2primeM-1 downto 0) := "111"; -- 7
 
 --EC (Elliptic Curve)
 

@@ -17,7 +17,7 @@ entity cell is
    port(   s_prev:     in  std_logic;
            Xi_Yj:      in  std_logic;
 	   u_Mj:       in  std_logic;
-	   write_out2: in  std_logic:
+	   write_out2: in  std_logic;
 	   clk, rst:   in  std_logic;
            out1:       out std_logic;
 	   out2:       out std_logic
@@ -31,7 +31,7 @@ architecture arch_cell of cell is
 	);
    end component;
 
-   signal u0, u1:    std_logic;
+   signal u1:    std_logic;
    signal t0, t1:    std_logic;
    signal reg_c:     std_logic;
 
@@ -46,24 +46,24 @@ begin
 		reg_c <= '0';
 	   else
 	        reg_c <= u1;
-	   end if
+	   end if;
 	end if; 
    end process;
 
    csa_T: csa
-	port map(a => reg_c;
-		 b => s_prev;
-		 c_in => Xi_Yj;
-		 s => t0;
+	port map(a => reg_c,
+		 b => s_prev,
+		 c_in => Xi_Yj,
+		 s => t0,
 		 c_out => t1
-		);
+	);
 
   csa_U: csa
-	port map(a => t0;
-		 b => u_Mj;
-		 c_in => t1;
-		 s => out1;
-		 c_out => c;
+	port map(a => t0,
+		 b => u_Mj,
+		 c_in => t1,
+		 s => out1,
+		 c_out => u1
 	);
 
 end arch_cell;
