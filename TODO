@@ -6,11 +6,11 @@ Implement Statemachine
 
 Bekijk doorschuifmechanisme voor Multiplexers
 
-#3
+#3 -- Implemented, but not tested
 
 Implement scalable architecture --> Koc
 
-#4 -- to be tested
+#4 -- done
 
 Implement non-modular subtraction and addition
 
@@ -18,6 +18,11 @@ Implement non-modular subtraction and addition
 
 Implement point multiplication module
 
-#6 -- First draft implemented (counter.vhd in MM_design1/)
+#6 -- counter.vhd working, but RCadder's still need
+#  -- to be exchanged by counter's
 
 Counter adders can be more efficient
+
+#7
+
+Optimalization
