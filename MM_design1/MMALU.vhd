@@ -39,9 +39,9 @@ entity MMALU is
 end MMALU;
 
 architecture arch_MMALU of MMALU is
-   subtype counter is     std_logic_vector(e-1 downto 0);
+   subtype counter_type is std_logic_vector(e-1 downto 0);
    
-   signal cntr, cntr_next:  counter;
+   signal cntr, cntr_next:  counter_type;
 
    signal xory:		std_logic_vector(log2primeM+1 downto 0);
    signal regX: 	std_logic_vector(log2primeM+1 downto 0);
@@ -86,6 +86,13 @@ architecture arch_MMALU of MMALU is
 	      c_in:   in  std_logic;
               output: out std_logic_vector(q-1 downto 0)
            );
+   end component;
+   
+   component counter
+      generic(q: integer);
+      port(   input:  in  std_logic_vector(q-1 downto 0);  
+	      output: out std_logic_vector(q-1 downto 0)
+          );
    end component;
 begin
    --Output
@@ -180,9 +187,9 @@ begin
       generic map(log2primeM+3)
       port map(adder_out, B, TwoComp, Tnext);
       
-   RCadder_counter: RCadder
+   RCadder_counter: counter
       generic map(e)
-      port map(cntr, (others => '0'), '1', cntr_next);
+      port map(cntr, cntr_next);
       
    --For implementing add function
    -- when cmd = '1' then we use the adding function of the MALU
