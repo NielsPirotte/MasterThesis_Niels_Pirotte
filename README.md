@@ -4,7 +4,7 @@ VHDL design of ASIC implementation for ECC with complete formulae
 ## General
 
 ### MM_design1
-First implementation of Montgomery Multiplication with 4N outputs and 2N outputs.
+First implementation of Montgomery Multiplication with 2 4N inputs and a 2N output.
 Also 2 2N inputs can be added and subtracted resulting in a 4N output
 
 ### MM_design2
