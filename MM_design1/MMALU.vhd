@@ -97,8 +97,8 @@ architecture arch_MMALU of MMALU is
 begin
    --Output
    t    <= regT;
-
    done <= done_h;
+
    -- Modular settings
    M  <= "000" & primeM;
    TwoM <= '0' & primeM & '0';
@@ -118,7 +118,7 @@ begin
          elsif load = '1'then
             regX <= x;
          elsif en = '1' then
-            regX <= '0' & regX(log2primeM+1 downto 1); --shift with wordsize to left [<< d]
+            regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
          else
             regX <= regX;
          end if;
@@ -151,7 +151,7 @@ begin
 	    end if;
          elsif en = '1' then
 	    if cmd ='0' then
-            	regT <= Tnext(log2primeM+2 downto 1); -- with div d
+            	regT <= Tnext(log2primeM+2 downto 1); --already divided by 2
 	    else
 		regT <= Tnext(log2primeM+1 downto 0);
 	    end if;
@@ -162,7 +162,7 @@ begin
    end process;
    
    --> Algorithm voor d = 1 (per bit)
-   -- u := t0 = {regT[0] + regX[0]*regY[0]} (-m0^(-1) -->1) mod 2
+   -- u := t0 = {regT[0] + regX[0]*regY[0]} (-m0*(-1) -->1) mod 2
    -- Tnext <= {regT + --regX[0]*regY-- + --u*primeM-- } >> d
    
    u <= regT(0) xor (regX(0) and regY(0));
@@ -199,7 +199,7 @@ begin
    B <= regX_ext  when (cmd = '1') else uM;
    
    --Timer for knowing when Montgomery ended
-   --Define registers
+
    --Deze blok moet nog worden nagekeken
    shift_timer: process(rst, clk)
    begin
