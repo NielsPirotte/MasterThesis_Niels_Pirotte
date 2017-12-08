@@ -20,13 +20,13 @@ Implementation of point multiplication using the principle of the Montgomery Lad
 
 ### In progress
 
-#### 1
+#### 1 -- Implemented, but not tested
 
-Implement Statemachine
+Implement Point Addition
 
 #### 2 -- done, not possible (recheck after first implementation)
 
-Bekijk doorschuifmechanisme voor Multiplexers
+Look at shiftmechanism for multiplexers
 
 #### 3 -- Implemented, but not tested
 
