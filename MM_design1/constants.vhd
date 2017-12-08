@@ -29,7 +29,12 @@ constant e: integer := integer(ceil(log2(Real(log2primeM+4))));
 --
 --constant primeM: std_logic_vector(log2primeM-1 downto 0) := "1101"; -- 13
 constant primeM: std_logic_vector(log2primeM-1 downto 0) := "111"; -- 7
+--
+--corresponding R1
+-- 128 mod 7 = 2 --> "010"
+constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
 
 --EC (Elliptic Curve)
-
+--defining the EC
+constant B3: std_logic_vector(log2primeM-1 downto 0) := "001";
 end constants;  
