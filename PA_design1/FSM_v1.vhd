@@ -1,7 +1,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
-entity testprogram_FSM is
+entity FSM is
   port (
     reset : in STD_LOGIC;
     clock : in STD_LOGIC;
@@ -14,18 +14,29 @@ entity testprogram_FSM is
     opcode : out STD_LOGIC_VECTOR(2 downto 0);
     Asel : out STD_LOGIC_VECTOR(2 downto 0);
     Bsel : out STD_LOGIC_VECTOR(2 downto 0);
-    Csel : out STD_LOGIC_VECTOR(2 downto 0)
+    Csel : out STD_LOGIC_VECTOR(2 downto 0);
+    load_MMALU: out STD_LOGIC
   );
-end testprogram_FSM;
+end FSM;
 
-architecture Behavioural of testprogram_FSM is
+architecture Behavioural of FSM is
   type Tstates is (sIdle, sOp_0000, sOp_0001, sOp_0002, sOp_0003, sOp_004, sOp_0005, sOp_006, sOp_0007, sOp_008, sOp_009, sOp_010, sOp_0011, sOp_012, sOp_013, sOp_0014, sOp_0015, sOp_0016, sOp_017, sOp_0018, sOp_0019, sOp_020, sOp_0021, sOp_0022, sOp_023, sOp_0024, sOp_0025, sOp_0026);
   signal curState, nxtState : Tstates;
 begin
+  
+  --Experimental
+  process(curState, nxtState)
+  begin
+     if (curState /= nxtState) then
+        load_MMALU <= '1';
+     else 
+        load_MMALU <= '0';
+     end if;
+  end process;
 
   P_FSM_SREG: process(reset, clock)
   begin
-    if reset = '1' then 
+    if reset = '0' then 
       curState <= sIdle;
     elsif rising_edge(clock) then
       curState <= nxtState;

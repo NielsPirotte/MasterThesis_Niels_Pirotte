@@ -17,10 +17,15 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 -- describe the interface of the module
 entity regfile is
     generic(n: integer := log2primeM + 2);
-    port(   din: in std_logic_vector(n-1 downto 0);
-            waddr, raddr0, raddr1: in std_logic_vector(2 downto 0); -- Deze moet nog worden geoptimaliseerd
-            rst, clk, we: in std_logic;
-            dout0, dout1: out std_logic_vector(n-1 downto 0));
+    port(   din:                   in  std_logic_vector(n-1 downto 0);
+	    --Onderstaande moet nog worden geoptimaliseerd
+            waddr, raddr0, raddr1: in  std_logic_vector(2 downto 0); 
+            rst, clk, we:          in  std_logic;
+	    load_op1, load_op2:    in  std_logic;
+	    X1, Y1, Z1:            in  std_logic_vector(n-1 downto 0);
+	    X2, Y2:                in  std_logic_vector(n-1 downto 0);
+            dout0, dout1:          out std_logic_vector(n-1 downto 0);
+	    X3, Y3, Z3:            out std_logic_vector(n-1 downto 0));
 end regfile;
 
 -- describe the behavior of the module in the architecture
@@ -34,6 +39,10 @@ architecture arch_regfile of regfile is
 	signal ent0, ent1, ent2, ent3:	     std_logic;
 	
 begin
+    -- for testing purposes
+    X3 <= regX1;
+    Y3 <= regY1;
+    Z3 <= regZ1;    
 
     -- decode the write address ('waddr') when the write enable ('we') is '1'
     decode: process(we, waddr)
@@ -137,7 +146,7 @@ begin
     -- store 'din' in the register with an active enable
     registers: process(rst, clk)
     begin
-        if rst = '1' then
+        if rst = '0' then
             regX1 <= (others => '0');
             regY1 <= (others => '0');
             regZ1 <= (others => '0');
@@ -148,7 +157,15 @@ begin
             regt2 <= (others => '0');
             regt3 <= (others => '0');
         elsif clk'event and clk = '1' then
-            if enX1 = '1' then
+	    if load_op2 = '1' then
+		if load_op1 = '1' then
+		   regX1 <= X1;
+		   regY1 <= Y1;
+		   regZ1 <= Z1;
+		end if;
+		regX2 <= X2;
+		regY2 <= Y2;
+            elsif enX1 = '1' then
                 regX1 <= din;
             elsif enY1 = '1' then
                 regY1 <= din;

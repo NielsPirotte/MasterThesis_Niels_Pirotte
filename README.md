@@ -2,6 +2,7 @@
 VHDL design of ASIC implementation for ECC with complete formulae
 
 ## General
+The design uses an active low reset
 
 ### MM_design1
 First implementation of Montgomery Multiplication with 2 4N inputs and a 2N output.
