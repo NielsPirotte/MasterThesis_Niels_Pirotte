@@ -108,7 +108,7 @@ begin
       	       raddr0     => ro_addr, 
       	       raddr1     => lo_addr, 
       	       rst        => rst,
-      	       clk        => rst, 
+      	       clk        => clk, 
       	       we         => wen,
       	       load_op1   => load,
       	       load_op2   => load,

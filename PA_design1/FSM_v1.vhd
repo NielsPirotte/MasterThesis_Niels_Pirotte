@@ -26,12 +26,16 @@ architecture Behavioural of FSM is
 begin
   
   --Experimental
-  process(curState, nxtState)
+  process(reset, clock)
   begin
-     if (curState /= nxtState) then
-        load_MMALU <= '1';
-     else 
-        load_MMALU <= '0';
+     if reset = '0' then
+        load_MMALU <= '0'; 
+     elsif rising_edge(clock) then
+        if (curState /= nxtState) then
+           load_MMALU <= '1';
+        else 
+           load_MMALU <= '0';
+        end if;
      end if;
   end process;
 

@@ -4,10 +4,10 @@ use ieee.std_logic_1164.all;
 library work;
 use work.constants.all;
 
-entity tb_MMALU is
-end tb_MMALU;
+entity tb_point_addition is
+end tb_point_addition;
 
-architecture tb of tb_MMALU is
+architecture tb of tb_point_addition is
     component point_addition
         generic(n: integer := log2primeM + 2);
    	port(  rst, clk:   in  std_logic;
@@ -51,7 +51,7 @@ begin
        	      done => done,
 	      X3   => X3,
 	      Y3   => Y3, 
-	      Z3   => Y3);
+	      Z3   => Z3);
 
     -- Clock generation
     clk <= not clk after clk_period/2 when TbSimEnded /= '1' else '0';
@@ -92,6 +92,7 @@ begin
 	wait on done;
 	
 	-- End of simulation
+	TbSimEnded <= '1';
 
     end process;
 

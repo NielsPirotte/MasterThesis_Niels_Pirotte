@@ -43,22 +43,22 @@ architecture arch_MMALU of MMALU is
    
    signal cntr, cntr_next:  counter_type;
 
-   signal xory:		std_logic_vector(log2primeM+1 downto 0);
-   signal regX: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regX_ext:     std_logic_vector(log2primeM+2 downto 0);
-   signal regY: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regY_ext:     std_logic_vector(log2primeM+2 downto 0);
-   signal regT: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regT_ext:     std_logic_vector(log2primeM+2 downto 0);
-   signal u:     	std_logic;
-   signal TwoComp: 	std_logic;
-   signal xY:		std_logic_vector(log2primeM+2 downto 0);
-   signal uM:   	std_logic_vector(log2primeM+2 downto 0);
-   signal Tnext: 	std_logic_vector(log2primeM+2 downto 0);
-   signal M:            std_logic_vector(log2primeM+2 downto 0);
-   signal TwoM:	        std_logic_vector(log2primeM+1 downto 0);
+   signal xory:		   std_logic_vector(log2primeM+1 downto 0);
+   signal regX: 	   std_logic_vector(log2primeM+1 downto 0);
+   signal regX_ext:        std_logic_vector(log2primeM+2 downto 0);
+   signal regY: 	   std_logic_vector(log2primeM+1 downto 0);
+   signal regY_ext:        std_logic_vector(log2primeM+2 downto 0);
+   signal regT: 	   std_logic_vector(log2primeM+1 downto 0);
+   signal regT_ext:        std_logic_vector(log2primeM+2 downto 0);
+   signal u:     	   std_logic;
+   signal TwoComp: 	   std_logic;
+   signal xY:		   std_logic_vector(log2primeM+2 downto 0);
+   signal uM:   	   std_logic_vector(log2primeM+2 downto 0);
+   signal Tnext: 	   std_logic_vector(log2primeM+2 downto 0);
+   signal M:               std_logic_vector(log2primeM+2 downto 0);
+   signal TwoM:	           std_logic_vector(log2primeM+1 downto 0);
    signal A, B, adder_out: std_logic_vector(log2primeM+2 downto 0);
-   signal done_h:       std_logic;
+   signal done_h:          std_logic;
 
    component xor_cell
       generic(q: integer);
@@ -203,22 +203,25 @@ begin
    --Deze blok moet nog worden nagekeken
    shift_timer: process(rst, clk)
    begin
-      done_h <= '0';
       if clk'event and clk = '1' then
       	if rst = '0' then
 	--if rst = '0' or load = '1' then
+	   done_h <= '0';
       	   cntr	<= (others => '0');
+	elsif load = '1' then
+           done_h <= '0';
+           cntr <= (others => '0');
       	elsif en = '1' then
 	   if cmd = '1' then 
-		if cntr = 1 then
-		    done_h <= '1';
-		    -- cntr <= (others => '0');
-		else 
-		    cntr <=  cntr_next;
-		end if;	
+	      if cntr = 0 then
+		done_h <= '1';
+		cntr <= cntr_next;
+	      else 
+		done_h <= '0';
+	      end if;
       	   --log2primeM moeten we wrs nog binair kunnen voorstellen?
       	   elsif cntr = log2primeM+3 then
-      	   	cntr 	  <= (others => '0');
+      	   	cntr <= (others => '0');
       	   	done_h <= '1';
       	   else 
       	   	cntr 	 <= cntr_next;
