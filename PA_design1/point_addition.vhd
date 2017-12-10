@@ -13,7 +13,7 @@ library work;
 use work.constants.all;
 
 entity point_addition is
-   generic(integer n := log2primeM + 2);
+   generic(n: integer := log2primeM + 2);
    port(  rst, clk:   in  std_logic;
           load:       in  std_logic;
           en:	      in  std_logic;
@@ -24,7 +24,7 @@ entity point_addition is
 	);
 end point_addition;
 
-architecture arch_point_addition is
+architecture arch_point_addition of point_addition is
    component FSM
    	 port (
 	    reset : in STD_LOGIC;
@@ -38,8 +38,9 @@ architecture arch_point_addition is
 	    opcode :    out STD_LOGIC_VECTOR(2 downto 0);
 	    Asel :      out STD_LOGIC_VECTOR(2 downto 0);
 	    Bsel :      out STD_LOGIC_VECTOR(2 downto 0);
-	    Csel :      out STD_LOGIC_VECTOR(2 downto 0)
-            load_MMALU: out std_logic;
+	    Csel :      out STD_LOGIC_VECTOR(2 downto 0);
+            load_MMALU: out STD_LOGIC;
+	    FSM_done:   out STD_LOGIC
 	  );
    end component;
    
@@ -81,20 +82,20 @@ architecture arch_point_addition is
     
     -- Definition of signals
     -- Instuction:
-    lo_addr, ro_addr:          std_logic_vector(2 downto 0);
-    waddr, opcode:             std_logic_vector(2 downto 0);
+    signal lo_addr, ro_addr:          std_logic_vector(2 downto 0);
+    signal waddr, opcode:             std_logic_vector(2 downto 0);
     ----------------------------------------------------------
-    lo_out, ro_out:            std_logic_vector(n-1 downto 0);
-    MMALU_out:                 std_logic_vector(n-1 downto 0);
-    load_operands, MMALU_done: std_logic;
-    cmd, sub, wen:             std_logic;
+    signal lo_out, ro_out:            std_logic_vector(n-1 downto 0);
+    signal MMALU_out:                 std_logic_vector(n-1 downto 0);
+    signal load_operands, MMALU_done: std_logic;
+    signal cmd, sub, wen:             std_logic;
 begin
    inst_MMALU : MMALU
     port map (rst  => rst,
               clk  => clk,
               load => load_operands,
-              x    => lo,
-              y    => ro,
+              x    => lo_out,
+              y    => ro_out,
               t    => MMALU_out,
 	      done => MMALU_done,
               en   => en,
@@ -126,12 +127,13 @@ begin
       port map(reset      => rst,
 	       clock      => clk,
 	       ce         => en, --This is an enable pulse and needs to be configured properly
-	       done       => done,
+	       done       => MMALU_done,
 	       opcode     => opcode,
 	       Asel       => lo_addr,
 	       Bsel       => ro_addr,
 	       Csel       => waddr,
-               load_MMALU => load_operands);
+               load_MMALU => load_operands,
+	       FSM_done   => done);
                
    inst_controller: controller
       port map(opcode => opcode,

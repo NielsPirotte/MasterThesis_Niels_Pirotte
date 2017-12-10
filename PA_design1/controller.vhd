@@ -34,20 +34,21 @@ architecture arch_controller of controller is
    begin
    process (opcode)
       begin
-      load <= '0'; cmd = '0'; sub <= '0'; wen <= '0';
+      load <= '0'; cmd <= '0'; sub <= '0'; wen <= '0';
          case opcode is
 	    when "000" => 
-		'load' <= '1';
-		'wen' <= '1';
+		load <= '1';
+		wen <= '1';
  	    when "001" =>
-		'load' <= '1';
-		'wen' <= '1';
-		'cmd' <= '1';
+		load <= '1';
+		wen <= '1';
+		cmd <= '1';
 	    when "010" =>
-		'load' <= '1';
-		'wen' <= '1';
-		'cmd' <= '1';
-		'sub' <= '1';
+		load <= '1';
+		wen <= '1';
+		cmd <= '1';
+		sub <= '1';
+	   when others =>
 	   end case;
       end process;
 end arch_controller;

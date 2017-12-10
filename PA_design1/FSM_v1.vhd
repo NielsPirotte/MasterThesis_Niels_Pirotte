@@ -11,11 +11,12 @@ entity FSM is
     done : in STD_LOGIC;
 
    -- OUTPUT
-    opcode : out STD_LOGIC_VECTOR(2 downto 0);
-    Asel : out STD_LOGIC_VECTOR(2 downto 0);
-    Bsel : out STD_LOGIC_VECTOR(2 downto 0);
-    Csel : out STD_LOGIC_VECTOR(2 downto 0);
-    load_MMALU: out STD_LOGIC
+    opcode:     out STD_LOGIC_VECTOR(2 downto 0);
+    Asel:       out STD_LOGIC_VECTOR(2 downto 0);
+    Bsel:       out STD_LOGIC_VECTOR(2 downto 0);
+    Csel:       out STD_LOGIC_VECTOR(2 downto 0);
+    load_MMALU: out STD_LOGIC;
+    FSM_done:   out STD_LOGIC
   );
 end FSM;
 
@@ -191,6 +192,7 @@ begin
 
   P_FSM_NSF: process(curState, ce, done)
   begin
+    FSM_done <= '0';
     case curState is
       when sIdle => 
         if ce = '1' then
@@ -355,6 +357,7 @@ begin
           nxtState <= sOp_0025;
         end if;
       when sOp_0026 =>
+        FSM_done <= '1';
         if done = '1' then
           nxtState <= sIdle;
         else

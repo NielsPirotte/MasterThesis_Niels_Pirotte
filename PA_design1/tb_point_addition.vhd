@@ -9,7 +9,7 @@ end tb_MMALU;
 
 architecture tb of tb_MMALU is
     component point_addition
-        generic(integer n := log2primeM + 2);
+        generic(n: integer := log2primeM + 2);
    	port(  rst, clk:   in  std_logic;
                load:       in  std_logic;
                en:	   in  std_logic;
@@ -63,20 +63,19 @@ begin
         load <= '0';
 
 	en <= '0';
-        cmd <= '0';
-        sub <= '0';
         
 	-- General test
 	-- Testing with the 3 bit prime 7 --> "111"
 	-- Therefore we have a 5 bit datapath
 	
 	-- Generating test data with magma:
+        --> (4:4:1)+(2:3:1)=(3:0:1)
 	 
-	X1 <= "00101";
-        Y1 <= "00110";
-        Z1 <= "00000";
-        X2 <= "00000";
-        Y2 <= "00000";
+	X1 <= "00100";
+        Y1 <= "00100";
+        Z1 <= "00001";
+        X2 <= "00010";
+        Y2 <= "00011";
 
         wait for 10 * clk_period;
         

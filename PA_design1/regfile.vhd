@@ -14,6 +14,10 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- include the STD_LOGIC_UNSIGNED package for arithmetic operations
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
+-- include the library constants
+library work;
+use work.constants.all;
+
 -- describe the interface of the module
 entity regfile is
     generic(n: integer := log2primeM + 2);
@@ -221,11 +225,11 @@ begin
             when "011" =>
             	dout1 <= regt0;
             when "100" =>
-            	dout1 => regt1;
+            	dout1 <= regt1;
             when "101" =>
-            	dout1 => regt3;
+            	dout1 <= regt3;
             when "110" =>
-            	dout1 => "00" & B3;
+            	dout1 <= "00" & B3;
             when others =>
                 dout1 <= "00" & R1;
         end case;
