@@ -89,7 +89,10 @@ architecture arch_point_addition of point_addition is
     signal MMALU_out:                 std_logic_vector(n-1 downto 0);
     signal load_operands, MMALU_done: std_logic;
     signal cmd, sub, wen:             std_logic;
+    signal FSM_done:		      std_logic;
 begin
+   done <= FSM_done and MMALU_done;
+
    inst_MMALU : MMALU
     port map (rst  => rst,
               clk  => clk,
@@ -133,7 +136,7 @@ begin
 	       Bsel       => ro_addr,
 	       Csel       => waddr,
                load_MMALU => load_operands,
-	       FSM_done   => done);
+	       FSM_done   => FSM_done);
                
    inst_controller: controller
       port map(opcode => opcode,

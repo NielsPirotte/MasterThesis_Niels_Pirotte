@@ -70,12 +70,17 @@ begin
 	
 	-- Generating test data with magma:
         --> (4:4:1)+(2:3:1)=(3:0:1)
-	 
-	X1 <= "00100";
-        Y1 <= "00100";
-        Z1 <= "00001";
-        X2 <= "00010";
-        Y2 <= "00011";
+	--> R = 128 mod 7 = 2
+	--> Montgomery representation: Mont of x = x * R mod 7
+	--> (4*2 mod 7 = 1: 1: 2)+(4:6:2)= (6:0:2)
+	--> (4:4:1)+(2:3:1)=(3:0:1)  
+	--> Conversion to Montgomery is unnecessary when using proj. coord.	
+ 
+	X1 <= "00110";
+        Y1 <= "00000";
+        Z1 <= "00010";
+        X2 <= "00000";
+        Y2 <= "00001";
 
         wait for 10 * clk_period;
         

@@ -15,7 +15,7 @@ curve_poly;
 E<x, y, z> := EllipticCurve(curve_poly);
 E;
 
-#(Fp);
+#(field);
 #(E);
 
 //Get a points on the elliptic curve
@@ -34,8 +34,25 @@ P[1];
 P[2];
 
 // Define Addition law
-add_law := map<cartesian -> E | P :-> E![P[1][2]*P[2][2]*(P[1][1]*P[2][2]+P[2][1]*P[1][2])-3*b*(P[1][1]*P[2][2]+P[2][1]*P[1][2])*P[1][3]-3*b*(P[1][1]+P[2][1]*P[1][3])*(P[1][2]+P[2][2]*P[1][3]), (P[1][2]^2)*(P[2][2]^2)+9*b*P[1][1]*P[2][1]*(P[1][1]+P[2][1]*P[1][3])-9*(b^2)*P[1][3]^2, 3*P[1][1]*P[2][1]*(P[1][1]*P[2][2]+P[2][1]*P[1][2])+P[1][2]*P[2][2]*(P[1][2]+P[2][2]*P[1][3])+3*b*P[1][3]*(P[1][2]+P[2][2]*P[1][3])]>;
+add_law := map<cartesian -> E | P :-> E![(P[1][1]*P[2][2]+P[2][1]*P[1][2])*(P[1][2]*P[2][2]-3*b*P[1][3])-3*b*(P[1][2]+P[2][2]*P[1][3])*(P[1][1]+P[2][1]*P[1][3]),(P[1][2]*P[2][2]+3*b*P[1][3])*(P[1][2]*P[2][2]-3*b*P[1][3])+9*b*P[1][1]*P[2][1]*(P[1][1]+P[2][1]*P[1][3]),(P[1][2]+P[2][2]*P[1][3])*(P[1][2]*P[2][2]+3*b*P[1][3])+3*P[1][1]*P[2][1]*(P[1][1]*P[2][2]+P[2][1]*P[1][2])]>;
 
 P @ add_law;
 
 //--> (4:4:1)+(2:3:1)=(3:0:1)
+
+//Point multiplication
+pm := function(m, P)
+   Out := P;
+   S := [x : x in [1..m-1]];
+   if not (P in E) then
+	return false;
+   end if; 
+   for i in S do
+     In := cartesian!<P, Out>;
+     Out := In @ add_law;
+   end for;
+
+   return Out;
+end function;
+
+pm(5, X);

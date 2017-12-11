@@ -188,7 +188,7 @@ begin
         Bsel <= "010";
       when others =>
         opcode <= "000";
-        Csel <= "000";
+        Csel <= "111";
         Asel <= "000";
         Bsel <= "000";
     end case;
@@ -198,7 +198,8 @@ begin
   begin
     FSM_done <= '0';
     case curState is
-      when sIdle => 
+      when sIdle =>
+	FSM_done <= '1'; 
         if ce = '1' then
           nxtState <= sOp_0000;
         else
