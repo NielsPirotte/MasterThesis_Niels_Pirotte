@@ -36,5 +36,7 @@ constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
 
 --EC (Elliptic Curve)
 --defining the EC
-constant B3: std_logic_vector(log2primeM-1 downto 0) := "001";
+--needs to be in Montgomery representation => 3*b*R
+--i.e. R = 128 = 2 mod 7 and b = 1 => 3*1*2 = 6
+constant B3: std_logic_vector(log2primeM-1 downto 0) := "110";
 end constants;  

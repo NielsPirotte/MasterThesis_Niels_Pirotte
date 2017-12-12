@@ -21,9 +21,13 @@ Implementation of point multiplication using the principle of the Montgomery Lad
 
 ### In progress
 
-#### 1 -- Implemented, but not tested
+#### 1 -- done and tested
 
 Implement Point Addition
+
+Remark: The implementation is working properly, but keep in mind that x2 and y2 need to be converted to the montgomery domain. They are the only inputs that need to be converted.
+
+Also the done signal of point_addition.vhd needs to be corrected.
 
 #### 2 -- done, not possible (recheck after first implementation)
 

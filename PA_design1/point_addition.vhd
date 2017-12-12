@@ -4,6 +4,9 @@
 -- Project: Masterthesis Niels Pirotte
 -- Module Name: point addition
 -- Description: Defines the point addition operation
+
+-- Remark: For point addition to work properly, only x2 and y2 need to be 
+--         transformed to the Montgomery domain. 
 --------------------------------------------------------------------------------
 
 library ieee;

@@ -69,18 +69,21 @@ begin
 	-- Therefore we have a 5 bit datapath
 	
 	-- Generating test data with magma:
+	--> (x1:y1:z1)+(x2:y2:1)=(x3:y3:z3)
         --> (4:4:1)+(2:3:1)=(3:0:1)
 	--> R = 128 mod 7 = 2
 	--> Montgomery representation: Mont of x = x * R mod 7
-	--> (4*2 mod 7 = 1: 1: 2)+(4:6:2)= (6:0:2)
-	--> (4:4:1)+(2:3:1)=(3:0:1)  
+	--> Only x2 and y2 need to be converted to Montgomery 
+	--> z2 needs to be 1!!!
+	--> (4:4:1)+(2*2 mod 7 = 4:6:R)= (3:0:1)
+	--> (4:4:1)+(4:6:R)=(3:0:1)  
 	--> Conversion to Montgomery is unnecessary when using proj. coord.	
  
-	X1 <= "00110";
-        Y1 <= "00000";
-        Z1 <= "00010";
-        X2 <= "00000";
-        Y2 <= "00001";
+	X1 <= "00100";
+        Y1 <= "00100";
+        Z1 <= "00001";
+        X2 <= "00011";
+        Y2 <= "00000";
 
         wait for 10 * clk_period;
         
@@ -95,9 +98,9 @@ begin
         -- Wait until test is finished
 
 	wait on done;
+	wait for clk_period*2;
 	
 	-- End of simulation
-	TbSimEnded <= '1';
 
     end process;
 
