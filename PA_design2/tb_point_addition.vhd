@@ -14,7 +14,7 @@ architecture tb of tb_point_addition is
                load:       in  std_logic;
                en:	   in  std_logic;
 	       X1, Y1, Z1: in  std_logic_vector(n-1 downto 0);
-	       X2, Y2:     in  std_logic_vector(n-1 downto 0);
+	       X2, Y2, Z2: in  std_logic_vector(n-1 downto 0);
        	       done:	   out std_logic;
 	       X3, Y3, Z3: out std_logic_vector(n-1 downto 0));
     end component;
@@ -28,6 +28,7 @@ architecture tb of tb_point_addition is
     signal Z1       : std_logic_vector (log2primeM+1 downto 0);
     signal X2       : std_logic_vector (log2primeM+1 downto 0);
     signal Y2       : std_logic_vector (log2primeM+1 downto 0);
+    signal Z2       : std_logic_vector (log2primeM+1 downto 0);
     signal done     : std_logic;
     signal X3       : std_logic_vector (log2primeM+1 downto 0);
     signal Y3       : std_logic_vector (log2primeM+1 downto 0);
@@ -48,6 +49,7 @@ begin
 	      Z1   => Z1,
 	      X2   => X2, 
 	      Y2   => Y2,
+	      Z2   => Z2,
        	      done => done,
 	      X3   => X3,
 	      Y3   => Y3, 
