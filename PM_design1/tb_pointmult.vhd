@@ -17,10 +17,11 @@ use work.constants.all;
 
 -- describe the interface of the module: a testbench does not have any inputs or outputs
 entity tb_pointmult is
-	generic(n: integer := log2primeM + 2;
-    	    --key parameters yet to be added 
-	    s: integer := 8;
-            log2s: integer := 3);
+	generic(
+		 n: integer := log2primeM + 2;
+    	         --key parameters yet to be added 
+	    	 s: integer := 4
+	      );
 end tb_pointmult;
 
 architecture behavioral of tb_pointmult is
@@ -64,8 +65,8 @@ begin
     -- map the signals in the testbench to the ports of the component
     inst_pointmult: pointmult
         generic map(n => n,
-		    s => s,
-                    log2s => log2s)
+		    s => s
+		    )
         port map(   
         	  X    => X,
         	  Y    => Y,
@@ -107,6 +108,8 @@ begin
         X <= "00000";
         Y <= "00100";
         Z <= "00001";
+        -- m consists of 4 bits
+        m <= "0101"; -- m = 5
         load <= '1';
     
         wait for 10 ns;
