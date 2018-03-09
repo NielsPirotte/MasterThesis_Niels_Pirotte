@@ -39,13 +39,13 @@ python testprograms were written to check possibility.
 
 outcome: 
   - not possible for algo7(recheck after first implementation);
-  - for algo8 2 registers could be entangled, resulting in a minor 8 write registers.
+  - for algo8 2 registers could be entangled, resulting in only 8 write registers.
 
-#### 3 Implement scalable architecture --> Koc
+### 3 Implement scalable architecture --> Koc
 
 Implemented, but not yet tested.
 
-#### 4
+### 4 Optimalization
 
-Optimalization
+
 
