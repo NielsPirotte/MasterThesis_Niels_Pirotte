@@ -14,37 +14,38 @@ Implementation according to the paper of Koç: "A scalable Architecture for Mont
 ### PA_design1
 Implementation of Point Addition with complete formulae according to: "Complete addition formulas for prime order elliptic curves" p13 algorithm 8
 
-### PM_design1
-Implementation of point multiplication using the principle of the Montgomery Ladder
-
-## TODO
-
-### In progress
-
-#### 1 -- done and tested
-
-Implement Point Addition
-
 Remark: The implementation is working properly, but keep in mind that x2 and y2 need to be converted to the montgomery domain. They are the only inputs that need to be converted.
 
 Also the done signal of point_addition.vhd needs to be corrected.
 
-#### 2 -- done, not possible (recheck after first implementation)
+### PA_design2
+Implementation of Point Addition with complete formulae according to: "Complete addition formulas for prime order elliptic curves" p12 algorithm 7
 
-Look at shiftmechanism for multiplexers
+Uses the same number of registers design 1.
 
-#### 3 -- Implemented, but not tested
+### PM_design1
+Implementation of point multiplication using the principle of the Montgomery Ladder.
 
-Implement scalable architecture --> Koc
+Although no Montgomery ladder would be faster --> only one points needs to be loaded.
+
+## TODO
+
+### 1 Point multiplication
+
+Testing....
+
+### 2 shiftmechanism for multiplexers
+python testprograms were written to check possibility.
+
+outcome: 
+  - not possible for algo7(recheck after first implementation);
+  - for algo8 2 registers could be entangled, resulting in a minor 8 write registers.
+
+#### 3 Implement scalable architecture --> Koc
+
+Implemented, but not yet tested.
 
 #### 4
 
 Optimalization
 
-### Completed
-
-Implement non-modular subtraction and addition
-
-Implement point multiplication module
-
-Counter adders can be more efficient (counter.vhd)
