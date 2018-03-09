@@ -41,7 +41,7 @@ begin
 
   P_FSM_SREG: process(reset, clock)
   begin
-    if reset = '1' then 
+    if reset = '0' then 
       curState <= sIdle;
     elsif rising_edge(clock) then
       curState <= nxtState;
@@ -243,7 +243,8 @@ begin
   begin
     FSM_done <= '0';
     case curState is
-      when sIdle => 
+      when sIdle =>
+	FSM_done <= '1'; 
         if ce = '1' then
           nxtState <= sOp_0000;
         else

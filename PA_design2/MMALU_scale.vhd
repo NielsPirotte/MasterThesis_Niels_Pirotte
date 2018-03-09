@@ -116,7 +116,7 @@ begin
    
    --For scaling
    one <= (0 => '1', others => '0');
-   y_for_scaling: <= one when (scale = '1') else y;
+   y_for_scaling <= one when (scale = '1') else y;
 
    --Define registers
    reg_x: process(rst, clk)

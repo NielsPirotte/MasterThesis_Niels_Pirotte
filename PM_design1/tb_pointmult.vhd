@@ -2,6 +2,7 @@
 -- 
 -- Authors: Nele Mentens and Tim Güneysu
 --  
+-- Modified by: Niels Pirotte
 -- Project Name: Masterthesis Niels Pirotte
 -- Module Name: tb_pointmult 
 -- Description: testbench for the pointmult module
@@ -11,35 +12,49 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
+-- include the library constants
+use work.constants.all;
+
 -- describe the interface of the module: a testbench does not have any inputs or outputs
 entity tb_pointmult is
-    generic(width: integer := 8;
-            log2width: integer := 3);
+	generic(n: integer := log2primeM + 2;
+    	    --key parameters yet to be added 
+	    s: integer := 8;
+            log2s: integer := 3);
 end tb_pointmult;
 
 architecture behavioral of tb_pointmult is
 
-    -- declare and initialize internal signals to drive the inputs of modaddn_mult5
-    signal a_i, b_i, p_i: std_logic_vector(width-1 downto 0) := (others => '0');
-    signal rst_i, clk_i, start_i: std_logic := '0';
+    signal X, Y, Z: 		  std_logic_vector(n-1 downto 0);
+    signal m: 	 		  std_logic_vector(s-1 downto 0);
+    signal en, load:	 	  std_logic := '0';
+    --signal r:				std_logic; -- random bit for random order excecution
+    signal done: 		  std_logic;
+    signal rst, clk:	 	  std_logic := '0';
     
-    -- declare internal signals to read out the outputs of modaddn_mult5
-    signal product_i: std_logic_vector(width-1 downto 0);
-    signal done_i: std_logic;
+    -- declare internal signals to read out the outputs of pointmult
+    signal done_i: 		  std_logic;
+    signal resX, resY, resZ:	  std_logic_vector(n-1 downto 0);
 
     -- define the clock period
     constant clk_period: time := 10 ns;
 
     -- declare the modaddn_mult5 component
     component pointmult
-        generic(n: integer := 8;
-		s: integer := 8;
-                log2s: integer := 3);
-        port(   Q, p: in std_logic_vector(n-1 downto 0);
-		m: in std_logic_vector(s-1 downto 0);
-                rst, clk, start: in std_logic;
-                product: out std_logic_vector(n-1 downto 0);
-                done: out std_logic);
+        generic(
+            n: integer;
+    	    --key parameters yet to be added 
+	    s: integer;
+            log2s: integer);
+    	port(   
+    	    X, Y, Z: 		in  std_logic_vector(n-1 downto 0);
+	    m: 			in  std_logic_vector(s-1 downto 0);
+            rst, clk_i:	 	in  std_logic;
+            en:			in  std_logic;
+            load:		in  std_logic;
+            r:			in  std_logic; --random bit for random order excecution
+            resX, resY, resZ:	out std_logic_vector(n-1 downto 0);
+            done: 		out std_logic);
     end component;
 
 begin
@@ -48,17 +63,24 @@ begin
     -- map the generic parameter in the testbench to the generic parameter in the component  
     -- map the signals in the testbench to the ports of the component
     inst_pointmult: pointmult
-        generic map(n => width,
-		    s => width,
-                    log2s => log2width)
-        port map(   Q => a_i,
-                    m => b_i,
-                    p => p_i,
-                    rst => rst_i,
-                    clk => clk_i,
-                    start => start_i,
-                    product => product_i,
-                    done => done_i);
+        generic map(n => n,
+		    s => s,
+                    log2s => log2s)
+        port map(   
+        	  X    => X,
+        	  Y    => Y,
+        	  Z    => Z,
+	    	  m    => m,
+            	  rst  => rst,
+            	  clk  => clk_i,
+            	  en   => en,
+            	  load => load;
+            	  r    => '1',
+            	  resX => resX,
+            	  resY => resY,
+            	  resZ => resZ,
+            	  done => done
+                );
     
     -- generate the clock with a duty cycle of 50%
     gen_clk: process
@@ -74,34 +96,28 @@ begin
     begin
         wait for 100 ns;
     
-        rst_i <= '1';
+        rst <= '0';
     
         wait for 10 ns;
     
-        rst_i <= '0';
+        rst <= '1';
     
         wait for 10 ns;
     
-        a_i <= "10101101";
-        b_i <= "10011001";
-        p_i <= "11111101";
-        start_i <= '1';
+        X <= "00000";
+        Y <= "00100";
+        Z <= "00001";
+        load <= '1';
     
         wait for 10 ns;
     
-        start_i <= '0';
+        load <= '0';
+        en <= '1';
     
-        wait until done_i = '1';
+        wait until done = '1';
         wait for 15 ns;
-    
-        a_i <= "01111011";
-        b_i <= "00101000";
-        p_i <= "11111101";
-        start_i <= '1';
             
-        wait for 10 ns;
-            
-        start_i <= '0';
+        en <= '0';
 
         wait;
     end process;

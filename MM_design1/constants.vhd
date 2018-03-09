@@ -38,5 +38,9 @@ constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
 --defining the EC
 --needs to be in Montgomery representation => 3*b*R
 --i.e. R = 128 = 2 mod 7 and b = 1 => 3*1*2 = 6
-constant B3: std_logic_vector(log2primeM-1 downto 0) := "110";
+--constant B3: std_logic_vector(log2primeM-1 downto 0) := "110";
+
+--i.e. R = 128 = 2 mod 7 and b = 1 => 3*2*2 = 12 mod 7 = 5 mod 7
+-->It is crucial b3 is given in Montgomery coordinates!!!
+constant B3: std_logic_vector(log2primeM-1 downto 0) := "101";
 end constants;  

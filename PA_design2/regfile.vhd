@@ -4,7 +4,8 @@
 -- Project Name: Masterthesis Niels Pirotte
 -- Module Name: regfile
 -- Description: register file with depth  and width log2primeM + 2 (size inputs 
---		MMALU) 
+--		MMALU)
+-- Version: 1.1 - T0 shift into T1 when writing to T0
 ---------------------------------------------------------------------------------
 
 -- include the STD_LOGIC_1164 package in the IEEE library for basic functionality
@@ -146,8 +147,11 @@ begin
             regX1 <= (others => '0');
             regY1 <= (others => '0');
             regZ1 <= (others => '0');
+	    regX2 <= (others => '0');
             regY2 <= (others => '0');
+	    regZ2 <= (others => '0');
             regt0 <= (others => '0');
+	    regt1 <= (others => '0');
             regt2 <= (others => '0');
             regt3 <= (others => '0');
 	    regt4 <= (others => '0');
@@ -170,7 +174,9 @@ begin
             elsif enY2 = '1' then
                 regY2 <= din;
             elsif ent0 = '1' then
-            	regt0 <= din;
+            	regt1 <= din;
+            	-- shifting into t0 after next write
+            	regt0 <= regt1;
             elsif ent2 = '1' then
             	regt2 <= din;
             elsif ent3 = '1' then
@@ -199,7 +205,7 @@ begin
             when "101" =>
             	dout0 <= regt0;
             when "110" =>
-            	dout0 <= regt1
+            	dout0 <= regt1;
             when others =>
                 dout0 <= regt4;
         end case;

@@ -18,10 +18,11 @@ use work.constants.all;
 entity point_addition is
    generic(n: integer := log2primeM + 2);
    port(  rst, clk:   in  std_logic;
-          load:       in  std_logic;
+          load_op1:   in  std_logic;
+          load_op2:   in  std_logic;
           en:	      in  std_logic;
 	  X1, Y1, Z1: in  std_logic_vector(n-1 downto 0);
-	  X2, Y2:     in  std_logic_vector(n-1 downto 0);
+	  X2, Y2, Z2: in  std_logic_vector(n-1 downto 0);
 	  done:	      out std_logic;
 	  X3, Y3, Z3: out std_logic_vector(n-1 downto 0)
 	);
@@ -38,7 +39,7 @@ architecture arch_point_addition of point_addition is
 	    done : in STD_LOGIC;
 
 	   -- OUTPUT
-	    opcode :    out STD_LOGIC_VECTOR(2 downto 0);
+	    opcode :    out STD_LOGIC_VECTOR(1 downto 0);
 	    Asel :      out STD_LOGIC_VECTOR(2 downto 0);
 	    Bsel :      out STD_LOGIC_VECTOR(2 downto 0);
 	    Csel :      out STD_LOGIC_VECTOR(2 downto 0);
@@ -51,8 +52,7 @@ architecture arch_point_addition of point_addition is
    	port(
    	   opcode: in  std_logic_vector(1 downto 0);
            cmd:    out std_logic;
-           sub:    out std_logic;
-           wen:    out std_logic
+           sub:    out std_logic
         );
    end component;
    
@@ -63,7 +63,7 @@ architecture arch_point_addition of point_addition is
             	rst, clk, we:          in  std_logic;
 		load_op1, load_op2:    in  std_logic;
 		X1, Y1, Z1:            in  std_logic_vector(n-1 downto 0);
-		X2, Y2:		       in  std_logic_vector(n-1 downto 0);
+		X2, Y2, Z2:	       in  std_logic_vector(n-1 downto 0);
             	dout0, dout1:          out std_logic_vector(n-1 downto 0);
             	X3, Y3, Z3:            out std_logic_vector(n-1 downto 0)
             );
@@ -91,10 +91,12 @@ architecture arch_point_addition of point_addition is
     signal lo_out, ro_out:            std_logic_vector(n-1 downto 0);
     signal MMALU_out:                 std_logic_vector(n-1 downto 0);
     signal load_operands, MMALU_done: std_logic;
-    signal cmd, sub, wen:             std_logic;
+    signal cmd, sub:	              std_logic;
     signal FSM_done:		      std_logic;
+    signal start_fsm:		      std_logic;
 begin
    done <= FSM_done and MMALU_done;
+   start_fsm <= en and load_op1 and load_op2;
 
    inst_MMALU : MMALU
     port map (rst  => rst,
@@ -115,14 +117,15 @@ begin
       	       raddr1     => lo_addr, 
       	       rst        => rst,
       	       clk        => clk, 
-      	       we         => wen,
-      	       load_op1   => load,
-      	       load_op2   => load,
+      	       we         => MMALU_done,
+      	       load_op1   => load_op1,
+      	       load_op2   => load_op2,
       	       X1         => X1,
       	       Y1	  => Y1,
       	       Z1	  => Z1,
       	       X2 	  => X2,
       	       Y2	  => Y2,
+	       Z2	  => Z2,
       	       dout0      => ro_out, 
       	       dout1      => lo_out, 
       	       X3         => X3,
@@ -132,7 +135,7 @@ begin
    inst_FSM: FSM
       port map(reset      => rst,
 	       clock      => clk,
-	       ce         => en, --This is an enable pulse and needs to be configured properly
+	       ce         => start_fsm, --This is an enable pulse and needs to be configured properly
 	       done       => MMALU_done,
 	       opcode     => opcode,
 	       Asel       => lo_addr,
@@ -144,7 +147,6 @@ begin
    inst_controller: controller
       port map(opcode => opcode,
                cmd    => cmd,
-               sub    => sub,
-               wen    => wen);
+               sub    => sub);
 
 end arch_point_addition;

@@ -11,7 +11,8 @@ architecture tb of tb_point_addition is
     component point_addition
         generic(n: integer := log2primeM + 2);
    	port(  rst, clk:   in  std_logic;
-               load:       in  std_logic;
+               load_op1:   in  std_logic;
+               load_op2:   in  std_logic;
                en:	   in  std_logic;
 	       X1, Y1, Z1: in  std_logic_vector(n-1 downto 0);
 	       X2, Y2, Z2: in  std_logic_vector(n-1 downto 0);
@@ -42,7 +43,8 @@ begin
     dut : point_addition
     port map (rst  => rst, 
               clk  => clk,
-              load => load,
+              load_op1 => load,
+              load_op2 => load,
               en   => en,
 	      X1   => X1,
 	      Y1   => Y1, 
@@ -70,22 +72,21 @@ begin
 	-- Testing with the 3 bit prime 7 --> "111"
 	-- Therefore we have a 5 bit datapath
 	
+	--> b = 2 therefore, 3*b = 6 (needs to be adjusted in constants.vhd
+	
 	-- Generating test data with magma:
-	--> (x1:y1:z1)+(x2:y2:1)=(x3:y3:z3)
-        --> (4:4:1)+(2:3:1)=(3:0:1)
+	--> (x1:y1:z1)+(x2:y2:z2)=(x3:y3:z3)
+        --> (0:4:1)+(5:6:1)=(3:6:1)
 	--> R = 128 mod 7 = 2
-	--> Montgomery representation: Mont of x = x * R mod 7
-	--> Only x2 and y2 need to be converted to Montgomery 
-	--> z2 needs to be 1!!!
-	--> (4:4:1)+(2*2 mod 7 = 4:6:R)= (3:0:1)
-	--> (4:4:1)+(4:6:R)=(3:0:1)  
+
 	--> Conversion to Montgomery is unnecessary when using proj. coord.	
  
 	X1 <= "00000";
-        Y1 <= "00110";
+        Y1 <= "00100";
         Z1 <= "00001";
-        X2 <= "00001";
-        Y2 <= "00001";
+        X2 <= "00101";
+        Y2 <= "00110";
+        Z2 <= "00001";
 
         wait for 10 * clk_period;
         
@@ -101,6 +102,7 @@ begin
 
 	wait on done;
 	wait for clk_period*2;
+	en <= '0';
 	
 	-- End of simulation
 

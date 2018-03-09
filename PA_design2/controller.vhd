@@ -24,8 +24,7 @@ entity controller is
 
    port(opcode: in  std_logic_vector(1 downto 0);
         cmd:    out std_logic;
-        sub:    out std_logic;
-        wen:    out std_logic
+        sub:    out std_logic
         );
 end controller;
 
@@ -34,7 +33,7 @@ architecture arch_controller of controller is
    --wen should not be necessary??
    process (opcode)
       begin
-      cmd <= '0'; sub <= '0'; wen <= '1';
+      cmd <= '0'; sub <= '0';
          case opcode is
 	    when "00" => 
 		--wen <= '1';
