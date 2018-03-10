@@ -27,7 +27,7 @@ entity pointmult is
     port(   X, Y, Z: 		in  std_logic_vector(n-1 downto 0);
 	    m: 			in  std_logic_vector(s-1 downto 0);
             rst, clk:	 	in  std_logic;
-            en:			in  std_logic;
+            ce:			in  std_logic;
             load:		in  std_logic;
             r:			in  std_logic; --random bit for random order excecution
             resX, resY, resZ: 	out std_logic_vector(n-1 downto 0);
@@ -37,7 +37,7 @@ end pointmult;
 -- describe the behavior of the module in the architecture
 architecture behavioral of pointmult is
     -- declare state
-    type my_state is (s_init, s_add, s_double, s_shift, s_done);
+    type my_state is (s_idle, s_init, s_add, s_double, s_shift, s_done);
 
     -- declare internal signals
     signal m_reg: 			std_logic_vector(s-2 downto 0);
@@ -51,7 +51,9 @@ architecture behavioral of pointmult is
     signal sel: 			std_logic_vector(1 downto 0);
     signal write_p1, write_p2: 		std_logic;
     signal pa_done: 			std_logic;
-    signal load:			std_logic;
+    signal sm_done:			std_logic;
+    signal load_ops:			std_logic;
+    signal start_point_addition:	std_logic;
     signal cntr, cntr_next: 		std_logic_vector(log2s-1 downto 0);
     
     signal state, nxt_state: 		my_state;
@@ -71,22 +73,21 @@ architecture behavioral of pointmult is
 	    );
     end component;
 
-    component RCadder
-	generic(q: integer);
-	port(   a:       in  std_logic_vector(q downto 0);
-		b:       in  std_logic_vector(q downto 0);
-		output:  out std_logic_vector(q downto 0)
-            );
-    end component;
+    component counter
+      generic(q: integer);
+      port(   input:  in  std_logic_vector(q-1 downto 0);  
+	      output: out std_logic_vector(q-1 downto 0)
+          );
+   end component;
 begin
     
-    inst_point_addition: modaddsubn
+    inst_point_addition: point_addition
         generic map(n => n)
         port map(   rst      => rst,
         	    clk      => clk,
-        	    load_op1 => load,
-        	    load_op2 => load,
-        	    en       => en,
+        	    load_op1 => load_ops,
+        	    load_op2 => load_ops,
+        	    en       => start_point_addition, --needs to be reviewed
         	    X1	     => a_x,
         	    Y1       => a_y,
         	    Z1       => a_z,
@@ -99,9 +100,13 @@ begin
                     Z3	     => out_z
                );
    ------
-   inst_cntr: RCadder
-	generic map(q=>log2s-1)
-	port map(cntr, (0=> '1', others => '0'), cntr_next);
+   
+   --testing
+   start_point_addition <= '0' when (state = s_idle) else '1';
+   
+   RCadder_counter: counter
+      generic map(log2s)
+      port map(cntr, cntr_next);
 
    reg_p1: process(rst, clk)
    begin
@@ -151,7 +156,7 @@ begin
         elsif clk'event and clk = '1' then
             if load = '1' then
                 m_reg <= m(s-2 downto 0);
-            elsif ((shift and en) = '1') then
+            elsif shift = '1' then
                 m_reg <= m_reg(s-3 downto 0) & '0';
             end if;
         end if;
@@ -165,59 +170,79 @@ begin
         elsif clk'event and clk = '1' then
 		if load = '1' then
 		    cntr <= (others => '0');
-		elsif ((shift and en) = '1') then
+		elsif shift = '1' then
 		    cntr <= cntr_next;
 		end if;
         end if;
     end process;
 
-    sw_state: process (clk, rst)
+    switch_state: process (clk, rst)
     begin
 	if rst = '0' then
-		state <= s_init;
-		load <= '0';
+		state <= s_idle;
 	elsif clk'event and clk = '1' then
-	   if en = '1' then
-	   	if state \= nxt_state then
-	   	   state <= nxt_state;
-	   	   load <= '1';
+	   	state <= nxt_state;  
+	end if;
+    end process;
+    
+    loading: process (clk, rst)
+    begin
+	if rst = '0' then
+		load_ops <= '0';
+	elsif clk'event and clk = '1' then
+		if (nxt_state /= state) then
+	   	   load_ops <= '1';
 	   	else
-	   	   load <= '0';
-	   	end if;
-	   end if;	  
+	   	   load_ops <= '0';
+	   	end if;  
 	end if;
     end process;
 
-    FSM: process (state, pa_done, cntr)
+
+    FSM: process (state, cntr, ce, pa_done)
     begin
 	case state is
+	   when s_idle =>
+	   	if ce = '1' then
+		   nxt_state <= s_init;
+		else 
+		   nxt_state <= state;
+		end if;
 	   when s_init =>
-		if pa_done = '1' then
-			nxt_state <= s_add;
+	   	if pa_done = '1' then
+		   nxt_state <= s_add;
+		else 
+		   nxt_state <= state;
 		end if;
 	   when s_add =>
-		if pa_done = '1' then
-			nxt_state <= s_double;
+		if pa_done = '1' then   
+		   nxt_state <= s_double;
+		else 
+		   nxt_state <= state;
 		end if;
 	   when s_double =>
-		if pa_done = '1' then
-			nxt_state <= s_shift;
+	   	if pa_done = '1' then
+		   nxt_state <= s_shift;
+		else 
+		   nxt_state <= state;
 		end if;
 	   when s_shift =>
 		if cntr = s-2 then
-			nxt_state <= s_done;
+			nxt_state <= s_idle;
 		else
 			nxt_state <= s_add;
 		end if;
-	   when s_done =>
-		nxt_state <= s_init;
+	   when others => 
+	   	nxt_state <= s_add;
        end case;
     end process;
 
     Output_FSM: process (state, m_left)
     begin
-	done <= '0'; write_p1 <= '0'; write_p2 <= '0'; sel <= "00"; shift <= '0'; 
+	done <= '0'; write_p1 <= '0'; write_p2 <= '0'; sel <= "00"; shift <= '0'; sm_done <= '0';
 	case state is
+	   when s_idle =>
+	   	sm_done <= '1'; 
 	   when s_shift =>
 		shift <= '1';
 	--We start from the assumption that the msb of m is 1
@@ -239,13 +264,11 @@ begin
 		   write_p1 <= '1';
 		   sel <= "00";
 		end if;
-	   when s_done =>
-		done <= '1';
 	   when others =>
 	end case;
     end process;
 
-    select_input: process (sel, p1_reg, p2_reg)
+    select_input: process (sel, p1_regX, p1_regY, p1_regZ, p2_regX, p2_regY, p2_regZ)
     begin
 	case sel is
 	   when "00" =>
@@ -274,7 +297,8 @@ begin
 		b_z <= p2_regZ;
 	end case;
     end process;
-    
+    --done <= sm_done and pa_done;
+    done <= '0';
     resX <= p1_regX;
     resY <= p1_regY;
     resZ <= p1_regZ;

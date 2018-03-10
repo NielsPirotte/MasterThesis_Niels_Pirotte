@@ -20,7 +20,8 @@ entity tb_pointmult is
 	generic(
 		 n: integer := log2primeM + 2;
     	         --key parameters yet to be added 
-	    	 s: integer := 4
+	    	 s: integer := 4;
+		 log2s:integer := 2		
 	      );
 end tb_pointmult;
 
@@ -30,15 +31,14 @@ architecture behavioral of tb_pointmult is
     signal m: 	 		  std_logic_vector(s-1 downto 0);
     signal en, load:	 	  std_logic := '0';
     --signal r:				std_logic; -- random bit for random order excecution
-    signal done: 		  std_logic;
-    signal rst, clk:	 	  std_logic := '0';
+    signal rst, clk_i:	 	  std_logic := '0';
     
     -- declare internal signals to read out the outputs of pointmult
-    signal done_i: 		  std_logic;
+    signal done: 		  std_logic;
     signal resX, resY, resZ:	  std_logic_vector(n-1 downto 0);
 
     -- define the clock period
-    constant clk_period: time := 10 ns;
+    constant clk_period: time := 1000 us;
 
     -- declare the modaddn_mult5 component
     component pointmult
@@ -50,8 +50,8 @@ architecture behavioral of tb_pointmult is
     	port(   
     	    X, Y, Z: 		in  std_logic_vector(n-1 downto 0);
 	    m: 			in  std_logic_vector(s-1 downto 0);
-            rst, clk_i:	 	in  std_logic;
-            en:			in  std_logic;
+            rst, clk:	 	in  std_logic;
+            ce:			in  std_logic;
             load:		in  std_logic;
             r:			in  std_logic; --random bit for random order excecution
             resX, resY, resZ:	out std_logic_vector(n-1 downto 0);
@@ -65,7 +65,8 @@ begin
     -- map the signals in the testbench to the ports of the component
     inst_pointmult: pointmult
         generic map(n => n,
-		    s => s
+		    s => s,
+		    log2s => log2s
 		    )
         port map(   
         	  X    => X,
@@ -74,8 +75,8 @@ begin
 	    	  m    => m,
             	  rst  => rst,
             	  clk  => clk_i,
-            	  en   => en,
-            	  load => load;
+            	  ce   => en,
+            	  load => load,
             	  r    => '1',
             	  resX => resX,
             	  resY => resY,
@@ -95,30 +96,30 @@ begin
     -- stimulus process (without sensitivity list, but with wait statements)
     stim: process
     begin
-        wait for 100 ns;
+        wait for 10*clk_period;
     
         rst <= '0';
     
-        wait for 10 ns;
+        wait for clk_period;
     
         rst <= '1';
     
-        wait for 10 ns;
+        wait for clk_period;
     
         X <= "00000";
         Y <= "00100";
         Z <= "00001";
-        -- m consists of 4 bits
-        m <= "0101"; -- m = 5
+        -- m consists of 4 bits --> first bit always must be 1
+        m <= "1101"; -- m = 13
         load <= '1';
     
-        wait for 10 ns;
+        wait for clk_period;
     
         load <= '0';
         en <= '1';
     
-        wait until done = '1';
-        wait for 15 ns;
+        wait on done;
+        wait for 2*clk_period;
             
         en <= '0';
 
