@@ -32,7 +32,7 @@ Although no Montgomery ladder would be faster --> only one points needs to be lo
 
 ### 1 Point multiplication
 
-Testing....
+Testing.... COMPLETED! coprocessor is fully functional
 
 ### 2 shiftmechanism for multiplexers
 python testprograms were written to check possibility.
