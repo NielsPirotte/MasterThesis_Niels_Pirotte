@@ -33,6 +33,7 @@ Although no Montgomery ladder would be faster --> only one points needs to be lo
 ### 1 Point multiplication
 
 Testing.... COMPLETED! coprocessor is fully functional
+testbench point multiplication implements secp256k1 curve
 
 ### 2 shiftmechanism for multiplexers
 python testprograms were written to check possibility.
