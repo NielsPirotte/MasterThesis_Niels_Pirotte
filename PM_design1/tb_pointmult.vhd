@@ -20,8 +20,8 @@ entity tb_pointmult is
 	generic(
 		 n: integer := log2primeM + 2;
     	         --key parameters yet to be added 
-	    	 s: integer := 4;
-		 log2s:integer := 2		
+	    	 s: integer := 20;
+		 log2s:integer := 5		
 	      );
 end tb_pointmult;
 
@@ -38,7 +38,7 @@ architecture behavioral of tb_pointmult is
     signal resX, resY, resZ:	  std_logic_vector(n-1 downto 0);
 
     -- define the clock period
-    constant clk_period: time := 1000 us;
+    constant clk_period: time := 100 us;
 
     -- declare the modaddn_mult5 component
     component pointmult
@@ -106,11 +106,16 @@ begin
     
         wait for clk_period;
     
-        X <= "00000";
-        Y <= "00100";
-        Z <= "00001";
+        --X <= "00000";
+        --Y <= "00100";
+        --Z <= "00001";
         -- m consists of 4 bits --> first bit always must be 1
-        m <= "1101"; -- m = 13
+        --m <= "1011"; -- m = 11
+	X <= "00" & x"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798";
+        Y <= "00" & x"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8";
+        Z <= (0 => '1' , others => '0');
+        -- m consists of 4 bits --> first bit always must be 1
+        m <= x"3E9FF"; -- m = 11
         load <= '1';
     
         wait for clk_period;

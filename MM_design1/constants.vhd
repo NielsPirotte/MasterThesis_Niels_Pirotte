@@ -22,17 +22,22 @@ package constants is
 -- Parameters
 --
 -- Number of bits of the prime
-constant log2primeM: integer := 3;
+--constant log2primeM: integer := 3;
+constant log2primeM: integer := 256;
+
 -- Therefore the inputs of the MMALU are < 2N
 -- Number of bits of scanning counter for the 2N inputs
 constant e: integer := integer(ceil(log2(Real(log2primeM+4))));
---
---constant primeM: std_logic_vector(log2primeM-1 downto 0) := "1101"; -- 13
-constant primeM: std_logic_vector(log2primeM-1 downto 0) := "111"; -- 7
---
+
+
+--constant primeM: std_logic_vector(log2primeM-1 downto 0) := "111"; -- 7
+
+--For the secp256k1 curve
+constant primeM: std_logic_vector(log2primeM-1 downto 0) := x"FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F";
+
 --corresponding R1
 -- 128 mod 7 = 2 --> "010"
-constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
+--constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
 
 --EC (Elliptic Curve)
 --defining the EC
@@ -42,5 +47,6 @@ constant R1: std_logic_vector(log2primeM-1 downto 0) := "010";
 
 --i.e. R = 128 = 2 mod 7 and b = 1 => 3*2*2 = 12 mod 7 = 5 mod 7
 -->It is crucial b3 is given in Montgomery coordinates!!!
-constant B3: std_logic_vector(log2primeM-1 downto 0) := "101";
+--constant B3: std_logic_vector(log2primeM-1 downto 0) := "101";
+constant B3: std_logic_vector(log2primeM-1 downto 0) := x"0000000000000000000000000000000000000000000000000000015000050250";
 end constants;  

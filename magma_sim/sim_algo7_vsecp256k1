@@ -1,0 +1,58 @@
+//This is a magma script
+//secp256k1
+
+p := 2^256 - 2^32 - 2^9 - 2^8 - 2^7 - 2^6 - 2^4 - 1;
+p;
+
+field := GF(p);
+
+b := 7;
+b3 := 3*b;
+
+//Curve polynomial
+curve_poly<x> := Polynomial(field, [b, 0, 0, 1]);
+curve_poly;
+
+//Define Elliptic Curve
+E<x, y, z> := EllipticCurve(curve_poly);
+E;
+
+#(field);
+#(E);
+
+//Get a points on the elliptic curve
+//Points(E);
+X := E![55066263022277343669578718895168534326250603453777594175500187360389116729240,32670510020758816978083085130507043184471273380659243275938904335757337482424,1];
+printf "X = "; X;
+
+cartesian := CartesianPower(E, 2);
+cartesian;
+
+// Define Addition law
+add_law := map<cartesian -> E | P :-> E![(P[1][1]*P[2][2]+P[2][1]*P[1][2])*(P[1][2]*P[2][2]-3*b*P[1][3]*P[2][3])-3*b*(P[1][2]*P[2][3]+P[2][2]*P[1][3])*(P[1][1]*P[2][3]+P[2][1]*P[1][3]),(P[1][2]*P[2][2]+3*b*P[1][3]*P[2][3])*(P[1][2]*P[2][2]-3*b*P[1][3]*P[2][3])+9*b*P[1][1]*P[2][1]*(P[1][1]*P[2][3]+P[2][1]*P[1][3]),(P[1][2]*P[2][3]+P[2][2]*P[1][3])*(P[1][2]*P[2][2]+3*b*P[1][3]*P[2][3])+3*P[1][1]*P[2][1]*(P[1][1]*P[2][2]+P[2][1]*P[1][2])]>;
+
+//Point multiplication
+pm := function(m, P)
+   Out := P;
+   S := [x : x in [1..m-1]];
+   if not (P in E) then
+	return false;
+   end if; 
+   for i in S do
+     In := cartesian!<P, Out>;
+     Out := In @ add_law;
+   end for;
+
+   return Out;
+end function; 
+
+n:= 780799; 
+printf "n = "; n;
+res := pm(n, X);
+printf "nX = "; res;
+
+testres := E![7861551360228797710324964135461874367193302156124140349507612323419231582126,
+              15981915174009075968799798789644747178575518956998688755831396236203191742561,
+              95215699043371475437109552690683404534696503558034688976019490288295699161980];
+assert testres eq res;
+printf "testres = "; testres;

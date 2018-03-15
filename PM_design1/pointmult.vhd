@@ -51,7 +51,6 @@ architecture behavioral of pointmult is
     signal sel: 			std_logic_vector(1 downto 0);
     signal write_p1, write_p2: 		std_logic;
     signal pa_done: 			std_logic;
-    signal sm_done:			std_logic;
     signal load_ops:			std_logic;
     signal start_point_addition:	std_logic;
     signal cntr, cntr_next: 		std_logic_vector(log2s-1 downto 0);
@@ -190,7 +189,7 @@ begin
 	if rst = '0' then
 		load_ops <= '0';
 	elsif clk'event and clk = '1' then
-		if (nxt_state /= state) then
+		if (nxt_state /= state) and (nxt_state /= s_shift)then
 	   	   load_ops <= '1';
 	   	else
 	   	   load_ops <= '0';
@@ -228,21 +227,23 @@ begin
 		end if;
 	   when s_shift =>
 		if cntr = s-2 then
-			nxt_state <= s_idle;
+			nxt_state <= s_done;
 		else
 			nxt_state <= s_add;
 		end if;
+	   when s_done =>
+		nxt_state <= s_idle;
 	   when others => 
-	   	nxt_state <= s_add;
+	   	nxt_state <= s_idle;
        end case;
     end process;
 
     Output_FSM: process (state, m_left)
     begin
-	done <= '0'; write_p1 <= '0'; write_p2 <= '0'; sel <= "00"; shift <= '0'; sm_done <= '0';
+	write_p1 <= '0'; write_p2 <= '0'; sel <= "00"; shift <= '0'; done <= '0';
 	case state is
-	   when s_idle =>
-	   	sm_done <= '1'; 
+	   when s_done =>
+	   	done <= '1'; 
 	   when s_shift =>
 		shift <= '1';
 	--We start from the assumption that the msb of m is 1
@@ -297,8 +298,7 @@ begin
 		b_z <= p2_regZ;
 	end case;
     end process;
-    --done <= sm_done and pa_done;
-    done <= '0';
+
     resX <= p1_regX;
     resY <= p1_regY;
     resZ <= p1_regZ;
