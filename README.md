@@ -11,6 +11,8 @@ Also 2 2N inputs can be added and subtracted resulting in a 4N output
 ### MM_design2
 Implementation according to the paper of Koç: "A scalable Architecture for Montgomery Multiplier"
 
+Word size equals 1.
+
 ### PA_design1
 Implementation of Point Addition with complete formulae according to: "Complete addition formulas for prime order elliptic curves" p13 algorithm 8
 
@@ -26,9 +28,20 @@ Uses the same number of registers design 1.
 ### PM_design1
 Implementation of point multiplication using the principle of the Montgomery Ladder.
 
-Although no Montgomery ladder would be faster --> only one points needs to be loaded.
+Although no Montgomery ladder would be faster (double and add) --> only one points needs to be loaded.
+
+### PM_design2
+Same as PM_design1, but with randomization of operations.
 
 ## TODO
+
+### 1 Implement scalable architecture --> Koc
+
+Implemented, but not yet tested.
+
+### 2 Optimalization
+
+## DONE
 
 ### 1 Point multiplication
 
@@ -42,12 +55,6 @@ python testprograms were written to check possibility.
 outcome: 
   - not possible for algo7(recheck after first implementation);
   - for algo8 2 registers could be entangled, resulting in only 8 write registers.
-
-### 3 Implement scalable architecture --> Koc
-
-Implemented, but not yet tested.
-
-### 4 Optimalization
 
 
 
