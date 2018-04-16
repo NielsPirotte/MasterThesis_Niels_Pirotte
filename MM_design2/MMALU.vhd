@@ -6,6 +6,12 @@
 -- Description: Modular Montgomery Multiplier using the method of Koç
 -- in the paper: "A scalable Architecture for Montgomery Multiplier"
 ----------------------------------------------------------------------
+-- General remark:
+-- A bound is set to the montgomery multiplier: 16M < R.
+-- This makes sure x,y < 4N results in t < 2N
+-- Therefore additional modular add/sub hw is not needed
+-- This means the datapath of the MMALU is 2 bits larger than the number of bits of M
+----------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -16,114 +22,91 @@ library work;
 use work.constants.all;
 
 entity MMALU is
-   generic(log2primeM: integer := 4; 
-	   e:          integer := 3
-          );
-
-   port(   rst, clk: in   std_logic;
-           load:     in   std_logic;
-           x:        in   std_logic_vector(log2primeM+1 downto 0);
-           y:        in   std_logic_vector(log2primeM+1 downto 0);
-           en:       in   std_logic;
-           t:        out  std_logic_vector(log2primeM+1 downto 0);
-           done:     out  std_logic
+   -- The datapath is 2 bits larger than log2primeM
+   -- The inputs and outputs are only 1 bit larger than log2primeM
+   port(   rst, clk: 	in  std_logic;
+           load: 	in  std_logic;
+           x: 		in  std_logic_vector(log2primeM+1 downto 0);
+           y: 		in  std_logic_vector(log2primeM+1 downto 0);
+           t: 		out std_logic_vector(log2primeM+1 downto 0);
+	   done:        out std_logic;
+           en: 		in  std_logic;  -- Enables shifting in x register
+           cmd: 	in  std_logic;  -- Enables adding and subtracting
+	   sub:         in  std_logic
        ); 
 end MMALU;
 
 architecture arch_MMALU of MMALU is
-   subtype cntr_type is std_logic_vector(e downto 0);
-
-  --Registers
-   signal regX: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regY: 	std_logic_vector(log2primeM+1 downto 0);
-   signal regT: 	std_logic_vector(log2primeM downto 0);
-   signal Xi_Yj:        std_logic;
-   signal u_Mj:         std_logic;
-   signal s_prev:	std_logic;
-   signal out1, out2:   std_logic;
-   signal cntr_0:       cntr_type;
-   signal cntr_0_next:  cntr_type;
-   signal cntr_1:       cntr_type;
-   signal cntr_1_next:  cntr_type;
-   signal shift_i:	std_logic;
-   signal shift_j:      std_logic;
-   signal u: 		std_logic;
-
-   --test
-   signal write_out2:   std_logic;
+   subtype counter_type is std_logic_vector(e-1 downto 0);
    
-   component cell
-      port(   s_prev:     in  std_logic;
-              Xi_Yj:      in  std_logic;
-              u_Mj:       in  std_logic;
-              write_out2: in  std_logic;
-              clk, rst:   in  std_logic;
-              out1:       out std_logic;
-              out2:       out std_logic
-          );
-   end component;
+   signal cntr_in, cntr_in_next:  counter_type;
+   signal cntr_out, cntr_out_next:  counter_type;
 
+   signal regX: 	   std_logic_vector(log2primeM+1 downto 0);
+   signal regY: 	   std_logic_vector(log2primeM+3 downto 0); --moet extended worden door counter
+
+   signal regT: 	   std_logic_vector(log2primeM+2 downto 0);
+   
+   signal u, t0, y0:   	   std_logic;
+   signal in_0:     	   std_logic;
+   signal in_1:     	   std_logic;
+   signal in_2:     	   std_logic;
+   signal out_0:	   std_logic;
+   signal shift: 	   std_logic;
+   
+   signal carry:	   std_logic_vector(1 downto 0);
+   signal carry_next:	   std_logic_vector(1 downto 0);
+   
+   signal M:               std_logic_vector(log2primeM+2 downto 0);
+   signal TwoM:	           std_logic_vector(log2primeM+1 downto 0);
+
+   signal done_h:          std_logic;
+
+   component three_bit_adder_with_carry
+   port(   in_0, in_1, in_2: in  std_logic;
+   	   c_in:	     in  std_logic_vector(1 downto 0);
+           s:		     out std_logic;
+           c_out:	     out std_logic_vector(1 downto 0)
+           );
+   end component;
+     
    component counter
       generic(q: integer);
       port(   input:  in  std_logic_vector(q-1 downto 0);  
 	      output: out std_logic_vector(q-1 downto 0)
           );
    end component;
-
+   
+   
 begin
-   -- Counter
-   counter_adder_0: counter
-      generic map(e+1)
-      port map( input => cntr_0,
-		output => cntr_0_next
-              );
-  
-    counter_adder_1: counter
-      generic map(e+1)
-      port map( input => cntr_1,
-		output => cntr_1_next
-              );
-   
-   reg_cntr: process(rst, clk)
-   begin
-      done <= '0'; shift_j <= '0';
-      if clk'event and clk = '1' then
-      	if rst = '0' then
-      	   cntr_0 <= (others => '0');
-	   cntr_1 <= (others => '0');
-      	elsif en = '1' then
-	    if cntr_0 = e+1 then
-		cntr_0 <= (others => '0');
-		if cntr_1 = e+1 then
-		   done <= '1';
- 		   cntr_1 <= (others => '0');
-	        else
-		   cntr_1 <= cntr_1_next;
-		   shift_j <= '1';
-		end if;
-	     else
-		cntr_0 <= cntr_0_next;
-	     end if;
-	end if;
-      end if;	    	
-   end process;
-	
-   -- Because every clockcycle one bit is processed
-   shift_i <= en;
+   --Output
+   t    <= regT(log2primeM+1 downto 0);
+   done <= done_h;
 
-   -- Registers
-   
+   -- Modular settings
+   M  <= "000" & primeM;
+   TwoM <= '0' & primeM & '0';
+
+   --Define registers
    reg_x: process(rst, clk)
    begin
       if clk'event and clk = '1' then
          if rst = '0' then
             regX <= (others => '0');
+            t0 <= '0';
+	    y0 <= '0';
          elsif load = '1'then
             regX <= x;
-         elsif en = '1' then
-            regX <= '0' & regX(log2primeM+1 downto 1);
+            t0 <= '0';
+	    y0 <= '0';
+         elsif shift = '1' and en ='1' then
+            regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
+            t0 <= regT(1);
+	    y0 <= regY(1);
          else
             regX <= regX;
+            t0 <= t0;
+	    y0 <= y0;
          end if;
       end if;
    end process;
@@ -134,62 +117,118 @@ begin
          if rst = '0' then
             regY <= (others => '0');
          elsif load = '1' then
-            regY <= y;
-         elsif en = '1' then
-            --circular shift register shift per word
-            regY <= regY(0) & regY(log2primeM+1 downto 1);
+            regY <= "00" & y;
+         elsif en ='1' then
+            regY <= regY(0) & regY(log2primeM+3 downto 1); --shifted >> 1
          else
             regY <= regY;
          end if;
       end if;
    end process;
    
-   Xi_Yj <= regX(0) and regY(0);
-
    reg_t: process(rst, clk)
    begin
       if clk'event and clk = '1' then
          if rst = '0' then
             regT <= (others => '0');
-         elsif load = '1' then 
+         elsif load = '1' then
             regT <= (others => '0');
          elsif en = '1' then
-            regT <=  out1 & regT(log2primeM+1 downto 1); 
+            if cntr_in = 0 then
+               regT <= '0' & regT(log2primeM+2 downto 1);
+            elsif cntr_in = log2primeM+1 then
+               regT <= carry & regT(log2primeM downto 0);
+            else 
+	       regT <= regT(0) & out_0 & regT(log2primeM+1 downto 1);
+	    end if;
          else
             regT <= regT;
          end if;
       end if;
    end process;
-
-   s_prev <= regT(0);
    
-   --> Algorithm voor d = 1 (per bit)
-   -- u := t0 = {regT[0] + regX[0]*regY[0]} (-m0^(-1) -->1) mod 2
-   -- Tnext <= {regT + --regX[0]*regY-- + --u*primeM-- } >> d
+   reg_carry: process(rst, clk)
+   begin
+      if clk'event and clk = '1' then
+         if rst = '0' then
+            carry <= "00";
+         elsif load = '1' or shift ='1' then
+            carry <= "00";
+         elsif en = '1' then
+            carry <= carry_next;
+         else 
+            carry <= carry;
+         end if;
+      end if;
+   end process;
    
-   -- Moet nog worden aangepast
-   u <= regT(0) xor (regX(0) and regY(0));
-   u_Mj <= u and primeM(to_integer(unsigned(cntr_1)));
-
---   process (cntr_1, u)
---   begin
---	u_Mj <= '0';
---	for i in 0 to log2primeM+1 loop
---		if (i = cntr_1) then
---			u_Mj <= primeM(i) and u;
---		end if;
---	end loop;
---    end process;
-
-   inst_cell_0: cell
-      generic map(log2primeM+2)
-      port map(	s_prev => s_prev,
-                Xi_Yj => Xi_Yj,   
-                u_Mj => u_Mj,
-                write_out2 => write_out2,
-                clk => clk,
-		rst => rst,
-                out1 => out1, 
-                out2 => out2
-	       );
+   -- logic
+   --u <= regT(0) xor (regX(0) and regY(0));
+   u <= t0 xor (regX(0) and y0);
+   in_0 <= regT(0);
+   in_1 <= regX(0) and regY(0);
+   in_2 <= u and M(to_integer(unsigned(cntr_in)));
+   
+   three_bit_adder_0: three_bit_adder_with_carry
+     port map(   
+     	      in_0  => in_0, 
+     	      in_1  => in_1, 
+     	      in_2  => in_2,
+   	      c_in  => carry,
+              s     => out_0,
+              c_out => carry_next
+             );
+   
+   counter_outer_loop: counter
+      generic map(e)
+      port map(cntr_out, cntr_out_next);
+      
+   counter_inner_loop: counter
+      generic map(e)
+      port map(cntr_in, cntr_in_next);
+   
+   --Timer for knowing when Montgomery ended
+   shift_in_outer_loop: process(rst, clk)
+   begin
+      if clk'event and clk = '1' then
+      	if rst = '0' then
+	   done_h <= '0';
+      	   cntr_out <= (others => '0');
+	elsif load = '1' then
+           done_h <= '0';
+           cntr_out <= (others => '0');
+      	elsif en = '1' and shift = '1' then
+      	   if cntr_out = log2primeM+3 then
+      	   	cntr_out <= (others => '0');
+      	   	done_h <= '1';
+      	   else 
+      	   	cntr_out <= cntr_out_next;
+      	   	done_h   <= '0';
+	   end if;
+        end if;
+     end if;      
+   end process;
+   
+      --Timer for knowing when Montgomery ended
+   shift_in_inner_loop: process(rst, clk)
+   begin
+      if clk'event and clk = '1' then
+      	if rst = '0' then
+	   shift <= '0';
+      	   cntr_in <= (others => '0');
+	elsif load = '1' then
+           shift <= '0';
+           cntr_in <= (others => '0');
+      	elsif en = '1' then
+      	   if cntr_in = log2primeM+2 then
+      	   	cntr_in <= (others => '0');
+      	   	shift <= '1';
+      	   else 
+      	   	cntr_in <= cntr_in_next;
+      	   	shift   <= '0';
+	   end if;
+        end if;
+     end if;      
+   end process;
+   
 end arch_MMALU;
