@@ -53,6 +53,10 @@ architecture arch_MMALU of MMALU is
    signal in_2:     	   std_logic;
    signal out_0:	   std_logic;
    signal shift: 	   std_logic;
+
+   --for subtracting
+   signal TwoComp:	   std_logic;
+   signal c_temp:	   std_logic;
    
    signal carry:	   std_logic_vector(1 downto 0);
    signal carry_next:	   std_logic_vector(1 downto 0);
@@ -96,9 +100,17 @@ begin
          elsif load = '1'then
             regX <= x;
             u <= '0';
-         elsif shift = '1' and en ='1' then
-            regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
-	    u <= regT(1) xor (regX(0) and regY(1));
+         elsif en ='1' then
+	    if cmd = '1' then
+	        regX <= '0' & regX(log2primeM+1 downto 1);
+                u <= '0';
+	    elsif shift = '1' then
+            	regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
+	    	u <= regT(1) xor (regX(0) and regY(1));
+	    else
+		regX <= regX;
+                u <= u;
+	    end if;
          else
             regX <= regX;
             u <= u;
@@ -127,14 +139,27 @@ begin
          if rst = '0' then
             regT <= (others => '0');
          elsif load = '1' then
-            regT <= (others => '0');
+	    if TwoComp = '0' then
+            	regT <= (others => '0');
+	    else
+		regT <= TwoM;
+	    end if;
          elsif en = '1' then
-            if cntr_in = 0 then
-               regT <= '0' & regT(log2primeM+1 downto 1);
-            elsif cntr_in_next = 0 then
-               regT <= carry(0) & out_0 & regT(log2primeM downto 1);
-            else 
-	       regT <= regT(0) & out_0 & regT(log2primeM downto 1);
+	    if cmd = '0' then
+            	if cntr_in = 0 then
+               	   regT <= '0' & regT(log2primeM+1 downto 1);
+            	elsif cntr_in_next = 0 then
+               	   regT <= carry_next(0) & out_0 & regT(log2primeM downto 1);
+            	else 
+	       	   regT <= regT(0) & out_0 & regT(log2primeM downto 1);
+	    	end if;
+	    else
+		--subtract or add
+            	if cntr_in_next = 0  then
+               	   regT <= c_temp & out_0 & regT(log2primeM+1 downto 2);
+            	else 
+	       	   regT <= out_0 & regT(log2primeM+1 downto 1);
+	    	end if;
 	    end if;
          else
             regT <= regT;
@@ -148,7 +173,11 @@ begin
          if rst = '0' then
             carry <= "00";
          elsif load = '1' or shift ='1' then
-            carry <= "00";
+	    if TwoComp = '0' then
+               carry <= "00";
+	    else
+	       carry <= "01";
+	    end if;
          elsif en = '1' then
             carry <= carry_next;
          else 
@@ -158,9 +187,11 @@ begin
    end process;
    
    -- logic
+   TwoComp <= (cmd and sub);
+   c_temp <= (not TwoComp) and carry_next(0);
    in_0 <= regT(0);
-   in_1 <= regX(0) and regY(0);
-   in_2 <= u and M;
+   in_1 <= (TwoComp xor regY(0)) when (cmd = '1') else (regX(0) and regY(0));
+   in_2 <= regX(0) when (cmd = '1') else (u and M);
    
    three_bit_adder_0: three_bit_adder_with_carry
       port map(   
@@ -191,7 +222,14 @@ begin
            done_h <= '0';
            cntr_out <= (others => '0');
       	elsif en = '1' and shift = '1' then
-      	   if cntr_out = log2primeM+3 then
+	   if cmd = '1' then
+		if cntr_out = 0 then
+		   done_h <= '1';
+		   cntr_out <= cntr_out_next;
+		else
+		   done_h <= '0';
+		end if;
+      	   elsif cntr_out = log2primeM+3 then
       	   	cntr_out <= (others => '0');
       	   	done_h <= '1';
       	   else 
@@ -218,18 +256,30 @@ begin
            cntr_in <= (others => '0');
 	   M <= primeM(0);
       	elsif en = '1' then
-      	   if cntr_in_next = log2primeM+1 then
-      	   	cntr_in <= (others => '1');
-      	   	shift <= '1';
-		M <= '0';
-      	   elsif  cntr_in_next < log2primeM then
-		cntr_in <= cntr_in_next;
-      	   	shift   <= '0';
-	        M <= primeM(to_integer(unsigned(cntr_in_next)));
+	   if cmd = '1' then
+	      if cntr_in_next = log2primeM then
+      	   	   cntr_in <= (others => '1');
+      	   	   shift <= '1';
+		   M <= '0';
+	      else
+      	   	   cntr_in <= cntr_in_next;
+      	   	   shift   <= '0';
+	           M <= '0';
+	      end if;
 	   else
-      	   	cntr_in <= cntr_in_next;
-      	   	shift   <= '0';
-	        M <= '0';
+      	      if cntr_in_next = log2primeM+1 then
+      	   	   cntr_in <= (others => '1');
+      	   	   shift <= '1';
+		   M <= '0';
+      	      elsif  cntr_in_next < log2primeM then
+		   cntr_in <= cntr_in_next;
+      	   	   shift   <= '0';
+	           M <= primeM(to_integer(unsigned(cntr_in_next)));
+	      else
+      	   	   cntr_in <= cntr_in_next;
+      	   	   shift   <= '0';
+	           M <= '0';
+	      end if;
 	   end if;
         end if;
      end if;      

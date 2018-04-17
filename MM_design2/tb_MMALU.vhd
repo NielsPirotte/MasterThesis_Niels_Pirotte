@@ -80,8 +80,34 @@ begin
 		wait for clk_period*10;
 		en <= '1';
 
-		wait for clk_period*10000;
-	--wait until done = '1';
+		wait for clk_period*40;
+
+	-- Test adder
+		wait for clk_period;
+		rst <= '1';
+		x <= "01000"; --8
+		y <= "01101"; --13 (8 + 13 = 21 --> "10101")
+		
+		cmd <= '1';
+		load <= '1';
+		wait for clk_period;
+		load <= '0';
+
+	wait for clk_period*10;
+
+	--Test subtraction
+		sub <= '1';
+		load <= '1';
+		wait for clk_period;
+		load <= '0'; -- (8 - 13 + [2*7] = 9) 
+
+	wait for clk_period*10;	
+		en <= '0';
+		
+	
+        -- Stop the clock and hence terminate the simulation
+	TbSimEnded <= '1';
+	
     end process;
 
 end tb;
