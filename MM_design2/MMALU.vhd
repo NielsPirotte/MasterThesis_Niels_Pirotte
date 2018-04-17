@@ -43,11 +43,11 @@ architecture arch_MMALU of MMALU is
    signal cntr_out, cntr_out_next:  counter_type;
 
    signal regX: 	   std_logic_vector(log2primeM+1 downto 0);
-   signal regY: 	   std_logic_vector(log2primeM+3 downto 0); --moet extended worden door counter
+   signal regY: 	   std_logic_vector(log2primeM+2 downto 0); --moet extended worden door counter
 
    signal regT: 	   std_logic_vector(log2primeM+2 downto 0);
    
-   signal u, t0, y0:   	   std_logic;
+   signal u:	   	   std_logic;
    signal in_0:     	   std_logic;
    signal in_1:     	   std_logic;
    signal in_2:     	   std_logic;
@@ -57,7 +57,7 @@ architecture arch_MMALU of MMALU is
    signal carry:	   std_logic_vector(1 downto 0);
    signal carry_next:	   std_logic_vector(1 downto 0);
    
-   signal M:               std_logic_vector(log2primeM+2 downto 0);
+   signal M:		   std_logic;
    signal TwoM:	           std_logic_vector(log2primeM+1 downto 0);
 
    signal done_h:          std_logic;
@@ -84,7 +84,6 @@ begin
    done <= done_h;
 
    -- Modular settings
-   M  <= "000" & primeM;
    TwoM <= '0' & primeM & '0';
 
    --Define registers
@@ -93,20 +92,16 @@ begin
       if clk'event and clk = '1' then
          if rst = '0' then
             regX <= (others => '0');
-            t0 <= '0';
-	    y0 <= '0';
+            u <= '0';
          elsif load = '1'then
             regX <= x;
-            t0 <= '0';
-	    y0 <= '0';
+            u <= '0';
          elsif shift = '1' and en ='1' then
             regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
-            t0 <= regT(1);
-	    y0 <= regY(1);
+	    u <= regT(1) xor (regX(0) and regY(1));
          else
             regX <= regX;
-            t0 <= t0;
-	    y0 <= y0;
+            u <= u;
          end if;
       end if;
    end process;
@@ -117,9 +112,9 @@ begin
          if rst = '0' then
             regY <= (others => '0');
          elsif load = '1' then
-            regY <= "00" & y;
+            regY <= '0' & y;
          elsif en ='1' then
-            regY <= regY(0) & regY(log2primeM+3 downto 1); --shifted >> 1
+            regY <= regY(0) & regY(log2primeM+2 downto 1); --shifted >> 1
          else
             regY <= regY;
          end if;
@@ -136,8 +131,8 @@ begin
          elsif en = '1' then
             if cntr_in = 0 then
                regT <= '0' & regT(log2primeM+2 downto 1);
-            elsif cntr_in = log2primeM+1 then
-               regT <= carry & regT(log2primeM downto 0);
+            elsif cntr_in = log2primeM+2 then
+               regT <= carry(0) & out_0 & regT(log2primeM+1 downto 1);
             else 
 	       regT <= regT(0) & out_0 & regT(log2primeM+1 downto 1);
 	    end if;
@@ -163,21 +158,19 @@ begin
    end process;
    
    -- logic
-   --u <= regT(0) xor (regX(0) and regY(0));
-   u <= t0 xor (regX(0) and y0);
    in_0 <= regT(0);
    in_1 <= regX(0) and regY(0);
-   in_2 <= u and M(to_integer(unsigned(cntr_in)));
+   in_2 <= u and M;
    
    three_bit_adder_0: three_bit_adder_with_carry
-     port map(   
+      port map(   
      	      in_0  => in_0, 
      	      in_1  => in_1, 
      	      in_2  => in_2,
    	      c_in  => carry,
               s     => out_0,
               c_out => carry_next
-             );
+              );
    
    counter_outer_loop: counter
       generic map(e)
@@ -205,6 +198,9 @@ begin
       	   	cntr_out <= cntr_out_next;
       	   	done_h   <= '0';
 	   end if;
+	else
+	   done_h <= '0';
+	   cntr_out <= cntr_out;
         end if;
      end if;      
    end process;
@@ -216,16 +212,24 @@ begin
       	if rst = '0' then
 	   shift <= '0';
       	   cntr_in <= (others => '0');
+	   M <= primeM(0);
 	elsif load = '1' then
            shift <= '0';
            cntr_in <= (others => '0');
+	   M <= primeM(0);
       	elsif en = '1' then
-      	   if cntr_in = log2primeM+2 then
-      	   	cntr_in <= (others => '0');
+      	   if cntr_in_next = log2primeM+2 then
+      	   	cntr_in <= (others => '1');
       	   	shift <= '1';
-      	   else 
+		M <= '0';
+      	   elsif  cntr_in_next < log2primeM then
+		cntr_in <= cntr_in_next;
+      	   	shift   <= '0';
+	        M <= primeM(to_integer(unsigned(cntr_in_next)));
+	   else
       	   	cntr_in <= cntr_in_next;
       	   	shift   <= '0';
+	        M <= '0';
 	   end if;
         end if;
      end if;      

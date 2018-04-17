@@ -22,7 +22,7 @@ entity three_bit_adder_with_carry is
 end three_bit_adder_with_carry;
 
 architecture arch_adder of three_bit_adder_with_carry is
-signal c_temp: std_logic;
+signal c_temp_1, c_temp_2, s_temp: std_logic;
 
 component adder
    port(   a, b, c_in: in  std_logic;
@@ -36,15 +36,23 @@ begin
 			a => in_0,
 			b => in_1, 
 			c_in => in_2,
-			s => s,
-			c_out => c_temp
+			s => s_temp,
+			c_out => c_temp_1
 			);
      inst_adder_1: adder
 		port map(
-			a => c_temp,
+			a => s_temp,
 			b => c_in(0), 
-			c_in => c_in(1),
+			c_in => '0',
+			s => s,
+			c_out => c_temp_2
+			);
+     inst_adder_2: adder
+		port map(
+			a => c_in(1),
+			b => c_temp_1, 
+			c_in => c_temp_2,
 			s => c_out(0),
 			c_out => c_out(1)
-			);	
+			);
 end arch_adder;

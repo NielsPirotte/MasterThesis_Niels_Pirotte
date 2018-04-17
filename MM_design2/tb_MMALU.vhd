@@ -67,8 +67,8 @@ begin
         -- Test for prime M = 7
 	-- 16M < R => R > 112 => R = 128 (7 bits) => datapath of MMALU becomes 7-1 = 6 bits
 	-- RR' - MM' = 1 => R' = 4 and M' = 73
-	x <= "00101"; --5
-        Y <= "00110"; --6 (5*6*4 mod 7 = 1 mod 7 = 8 mod7 --> "00001" = "01000")
+	x <= "11000"; --24
+        Y <= "10010"; --18 (24*18*4 mod 7 = 6 mod 7 = 13 mod7 --> "00110" = "01101")
 
 	-- EDIT Add stimuli here
         wait for 10 * clk_period;
