@@ -43,9 +43,9 @@ architecture arch_MMALU of MMALU is
    signal cntr_out, cntr_out_next:  counter_type;
 
    signal regX: 	   std_logic_vector(log2primeM+1 downto 0);
-   signal regY: 	   std_logic_vector(log2primeM+2 downto 0); --moet extended worden door counter
+   signal regY: 	   std_logic_vector(log2primeM+1 downto 0); --moet extended worden door counter
 
-   signal regT: 	   std_logic_vector(log2primeM+2 downto 0);
+   signal regT: 	   std_logic_vector(log2primeM+1 downto 0);
    
    signal u:	   	   std_logic;
    signal in_0:     	   std_logic;
@@ -80,7 +80,7 @@ architecture arch_MMALU of MMALU is
    
 begin
    --Output
-   t    <= regT(log2primeM+1 downto 0);
+   t    <= regT;
    done <= done_h;
 
    -- Modular settings
@@ -112,9 +112,9 @@ begin
          if rst = '0' then
             regY <= (others => '0');
          elsif load = '1' then
-            regY <= '0' & y;
+            regY <=  y;
          elsif en ='1' then
-            regY <= regY(0) & regY(log2primeM+2 downto 1); --shifted >> 1
+            regY <= regY(0) & regY(log2primeM+1 downto 1); --shifted >> 1
          else
             regY <= regY;
          end if;
@@ -130,11 +130,11 @@ begin
             regT <= (others => '0');
          elsif en = '1' then
             if cntr_in = 0 then
-               regT <= '0' & regT(log2primeM+2 downto 1);
-            elsif cntr_in = log2primeM+2 then
-               regT <= carry(0) & out_0 & regT(log2primeM+1 downto 1);
+               regT <= '0' & regT(log2primeM+1 downto 1);
+            elsif cntr_in_next = 0 then
+               regT <= carry(0) & out_0 & regT(log2primeM downto 1);
             else 
-	       regT <= regT(0) & out_0 & regT(log2primeM+1 downto 1);
+	       regT <= regT(0) & out_0 & regT(log2primeM downto 1);
 	    end if;
          else
             regT <= regT;
@@ -218,7 +218,7 @@ begin
            cntr_in <= (others => '0');
 	   M <= primeM(0);
       	elsif en = '1' then
-      	   if cntr_in_next = log2primeM+2 then
+      	   if cntr_in_next = log2primeM+1 then
       	   	cntr_in <= (others => '1');
       	   	shift <= '1';
 		M <= '0';
