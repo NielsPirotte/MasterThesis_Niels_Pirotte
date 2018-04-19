@@ -35,11 +35,9 @@ Same as PM_design1, but with randomization of operations.
 
 ## TODO
 
-### 1 Implement scalable architecture --> Koc
+### 1 Optimalization
 
-Implemented, but not yet tested.
-
-### 2 Optimalization
+Optimize various design by reducing register size, ... .
 
 ## DONE
 
@@ -55,6 +53,10 @@ python testprograms were written to check possibility.
 outcome: 
   - not possible for algo7(recheck after first implementation);
   - for algo8 2 registers could be entangled, resulting in only 8 write registers.
+  
+### 3 Implement scalable architecture --> Koc
+
+Implemented and fully operational.
 
 
 
