@@ -81,12 +81,13 @@ begin
 
 	--> Conversion to Montgomery is unnecessary when using proj. coord.	
  
-	X1 <= "00000";
-        Y1 <= "00100";
-        Z1 <= "00001";
-        X2 <= "00101";
-        Y2 <= "00110";
-        Z2 <= "00001";
+	X1 <= "00" & x"ed87544092aa9b6b91feaa88d6ed6133f769d024b0de9e9524511f3c37353ba6";
+	Y1 <= "00" & x"6d49d8634120914da108f93ef4dda91f907575897954f8fdf5efeaea52070011";
+	Z1 <= "00" & x"df10bda95599bb6c1d10cab9ae017bfab0af8344545c0d21ab52ecf7f27e2ccf";
+
+	X2 <= "00" & x"ed87544092aa9b6b91feaa88d6ed6133f769d024b0de9e9524511f3c37353ba6";
+	Y2 <= "00" & x"6d49d8634120914da108f93ef4dda91f907575897954f8fdf5efeaea52070011";
+	Z2 <= "00" & x"df10bda95599bb6c1d10cab9ae017bfab0af8344545c0d21ab52ecf7f27e2ccf";
 
         wait for 10 * clk_period;
         

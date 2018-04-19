@@ -65,6 +65,11 @@ architecture arch_MMALU of MMALU is
    signal TwoM:	           std_logic_vector(log2primeM+1 downto 0);
 
    signal done_h:          std_logic;
+   
+   --for scaling
+   signal y_for_scaling:   std_logic_vector(log2primeM+1 downto 0);
+   signal one:	           std_logic_vector(log2primeM+1 downto 0);
+   signal scale:	   std_logic;
 
    component three_bit_adder_with_carry
    port(   in_0, in_1, in_2: in  std_logic;
@@ -89,6 +94,7 @@ begin
 
    -- Modular settings
    TwoM <= '0' & primeM & '0';
+   one <= (0 => '1', others => '0');
 
    --Define registers
    reg_x: process(rst, clk)
@@ -96,17 +102,17 @@ begin
       if clk'event and clk = '1' then
          if rst = '0' then
             regX <= (others => '0');
-            u <= '0';
+            u <= x(0) and (y(0) or scale);
          elsif load = '1'then
             regX <= x;
-            u <= '0';
+            u <= x(0) and (y(0) or scale);
          elsif en ='1' then
 	    if cmd = '1' then
 	        regX <= '0' & regX(log2primeM+1 downto 1);
                 u <= '0';
 	    elsif shift = '1' then
             	regX <= '0' & regX(log2primeM+1 downto 1); --shifted >> 1
-	    	u <= regT(1) xor (regX(0) and regY(1));
+	    	u <= regT(1) xor (regX(1) and regY(1));
 	    else
 		regX <= regX;
                 u <= u;
@@ -124,7 +130,7 @@ begin
          if rst = '0' then
             regY <= (others => '0');
          elsif load = '1' then
-            regY <=  y;
+            regY <=  y_for_scaling;
          elsif en ='1' then
             regY <= regY(0) & regY(log2primeM+1 downto 1); --shifted >> 1
          else
@@ -188,10 +194,12 @@ begin
    
    -- logic
    TwoComp <= (cmd and sub);
-   c_temp <= (not TwoComp) and carry_next(0);
+   scale   <= (not cmd) and sub;
+   c_temp <=  (regY(1) xor regX(1) xor carry_next(0)) when (sub = '0') else (not carry_next(0));
    in_0 <= regT(0);
    in_1 <= (TwoComp xor regY(0)) when (cmd = '1') else (regX(0) and regY(0));
    in_2 <= regX(0) when (cmd = '1') else (u and M);
+   y_for_scaling <= one when (scale = '1') else y;
    
    three_bit_adder_0: three_bit_adder_with_carry
       port map(   

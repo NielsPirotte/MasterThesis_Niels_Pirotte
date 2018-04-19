@@ -20,8 +20,8 @@ entity tb_pointmult is
 	generic(
 		 n: integer := log2primeM + 2;
     	         --key parameters yet to be added 
-	    	 s: integer := 20;
-		 log2s:integer := 5		
+	    	 s: integer := 2;
+		 log2s:integer := 1		
 	      );
 end tb_pointmult;
 
@@ -111,11 +111,11 @@ begin
         --Z <= "00001";
         -- m consists of 4 bits --> first bit always must be 1
         --m <= "1011"; -- m = 11
-	X <= "00" & x"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798";
-        Y <= "00" & x"483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8";
-        Z <= (0 => '1' , others => '0');
+	X <= "00101";
+        Y <= "00001";
+        Z <= "00001";
         -- m consists of 4 bits --> first bit always must be 1
-        m <= x"BE9FF";
+        m <= "10";
         load <= '1';
     
         wait for clk_period;
